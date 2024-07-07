@@ -1,0 +1,141 @@
+package transport
+
+import (
+	"errors"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
+	"github.com/Lucky112/social/internal/models"
+	"github.com/Lucky112/social/mocks"
+	"github.com/gofiber/fiber/v2"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+)
+
+func TestAuth(t *testing.T) {
+	storage := mocks.NewAuthStorage(t)
+	authHandler := NewAuthHandler(storage, "encription-key")
+
+	app := fiber.New()
+	app.Post("/register", authHandler.Register)
+	app.Post("/login", authHandler.Login)
+
+	t.Run("test Register", func(t *testing.T) {
+		storage.On("Exists", "any string").Return(false).Once()
+		storage.On("Add", "any string", mock.Anything).Return(nil).Once()
+
+		body := strings.NewReader(`{
+			"email": "any string",
+			"name": "any string",
+			"password": "any string"
+		}`)
+
+		req := httptest.NewRequest("POST", "/register", body)
+		req.Header.Add("Content-type", "application/json")
+
+		resp, err := app.Test(req, -1)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusCreated, resp.StatusCode)
+	})
+
+	t.Run("test Register again", func(t *testing.T) {
+		storage.On("Exists", "any string").Return(true).Once()
+
+		body := strings.NewReader(`{
+			"email": "any string",
+			"name": "any string",
+			"password": "any string"
+		}`)
+
+		req := httptest.NewRequest("POST", "/register", body)
+		req.Header.Add("Content-type", "application/json")
+
+		resp, err := app.Test(req, -1)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+	})
+
+	t.Run("test Register bad json", func(t *testing.T) {
+		body := strings.NewReader(`{`)
+
+		req := httptest.NewRequest("POST", "/register", body)
+		req.Header.Add("Content-type", "application/json")
+
+		resp, err := app.Test(req, -1)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+	})
+
+	t.Run("test Login successfully", func(t *testing.T) {
+		user := &models.User{
+			Email:    "email",
+			Name:     "name",
+			Password: "password",
+		}
+
+		storage.On("Get", "email", mock.Anything).Return(user, nil).Once()
+
+		body := strings.NewReader(`{
+			"email": "email",
+			"password": "password"
+		}`)
+
+		req := httptest.NewRequest("POST", "/login", body)
+		req.Header.Add("Content-type", "application/json")
+
+		resp, err := app.Test(req, -1)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+	})
+
+	t.Run("test Login with wrong password", func(t *testing.T) {
+		user := &models.User{
+			Email:    "email",
+			Name:     "name",
+			Password: "password",
+		}
+
+		storage.On("Get", "email", mock.Anything).Return(user, nil).Once()
+
+		body := strings.NewReader(`{
+			"email": "email",
+			"password": "wrong password"
+		}`)
+
+		req := httptest.NewRequest("POST", "/login", body)
+		req.Header.Add("Content-type", "application/json")
+
+		resp, err := app.Test(req, -1)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+	})
+
+	t.Run("test Login with unknown email", func(t *testing.T) {
+		storage.On("Get", "unknown email", mock.Anything).Return(nil, errors.New("")).Once()
+
+		body := strings.NewReader(`{
+			"email": "unknown email",
+			"password": "password"
+		}`)
+
+		req := httptest.NewRequest("POST", "/login", body)
+		req.Header.Add("Content-type", "application/json")
+
+		resp, err := app.Test(req, -1)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+	})
+
+	t.Run("test Login bad json", func(t *testing.T) {
+		body := strings.NewReader(`{`)
+
+		req := httptest.NewRequest("POST", "/login", body)
+		req.Header.Add("Content-type", "application/json")
+
+		resp, err := app.Test(req, -1)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+	})
+}
