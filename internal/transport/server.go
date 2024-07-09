@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/Lucky112/social/internal/storage"
+	"github.com/Lucky112/social/internal/transport/auth"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 )
@@ -16,7 +17,7 @@ const signKey = "encription-key"
 
 func NewServer() Server {
 	authStorage := storage.NewAuthStorage()
-	authHandler := NewAuthHandler(authStorage, signKey)
+	authHandler := auth.NewAuthHandler(authStorage, signKey)
 
 	server := fiber.New()
 

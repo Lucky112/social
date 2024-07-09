@@ -1,7 +1,7 @@
-package transport
+package auth
 
 import (
-	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -54,7 +54,7 @@ func TestAuth(t *testing.T) {
 
 		resp, err := app.Test(req, -1)
 		assert.NoError(t, err)
-		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	})
 
 	t.Run("test Register bad json", func(t *testing.T) {
@@ -65,7 +65,18 @@ func TestAuth(t *testing.T) {
 
 		resp, err := app.Test(req, -1)
 		assert.NoError(t, err)
-		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("test Register empty json", func(t *testing.T) {
+		body := strings.NewReader(`{}`)
+
+		req := httptest.NewRequest("POST", "/register", body)
+		req.Header.Add("Content-type", "application/json")
+
+		resp, err := app.Test(req, -1)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	})
 
 	t.Run("test Login successfully", func(t *testing.T) {
@@ -109,11 +120,11 @@ func TestAuth(t *testing.T) {
 
 		resp, err := app.Test(req, -1)
 		assert.NoError(t, err)
-		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	})
 
 	t.Run("test Login with unknown email", func(t *testing.T) {
-		storage.On("Get", "unknown email", mock.Anything).Return(nil, errors.New("")).Once()
+		storage.On("Get", "unknown email", mock.Anything).Return(nil, fmt.Errorf("%w", models.UserNotFound)).Once()
 
 		body := strings.NewReader(`{
 			"email": "unknown email",
@@ -125,7 +136,7 @@ func TestAuth(t *testing.T) {
 
 		resp, err := app.Test(req, -1)
 		assert.NoError(t, err)
-		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	})
 
 	t.Run("test Login bad json", func(t *testing.T) {
@@ -136,6 +147,17 @@ func TestAuth(t *testing.T) {
 
 		resp, err := app.Test(req, -1)
 		assert.NoError(t, err)
-		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("test Login empty json", func(t *testing.T) {
+		body := strings.NewReader(`{}`)
+
+		req := httptest.NewRequest("POST", "/login", body)
+		req.Header.Add("Content-type", "application/json")
+
+		resp, err := app.Test(req, -1)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	})
 }

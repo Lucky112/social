@@ -25,7 +25,7 @@ func (a AuthStorage) Add(userId string, user *models.User) error {
 func (a AuthStorage) Get(userID string) (*models.User, error) {
 	user, exists := a[userID]
 	if !exists {
-		return nil, fmt.Errorf("user %s does not exist", userID)
+		return nil, fmt.Errorf("looking '%s' up: %w", userID, models.UserNotFound)
 	}
 
 	return user, nil
