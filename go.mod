@@ -1,16 +1,21 @@
 module github.com/Lucky112/social
 
-go 1.21
+go 1.22.0
+
+toolchain go1.22.2
 
 require (
+	github.com/georgysavva/scany/v2 v2.1.3
 	github.com/go-playground/validator/v10 v10.22.0
 	github.com/gofiber/contrib/jwt v1.0.10
 	github.com/gofiber/fiber/v2 v2.52.5
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/golang-migrate/migrate/v4 v4.17.1
 	github.com/google/uuid v1.6.0
+	github.com/guregu/null/v5 v5.0.0
 	github.com/jackc/pgx/v5 v5.6.0
 	github.com/ory/dockertest/v3 v3.10.0
+	github.com/pashagolub/pgxmock/v4 v4.2.0
 	github.com/stretchr/testify v1.9.0
 )
 
@@ -73,6 +78,6 @@ require (
 	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/sys v0.22.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
-	gopkg.in/yaml.v2 v2.3.0 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
