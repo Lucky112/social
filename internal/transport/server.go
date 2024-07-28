@@ -3,7 +3,7 @@ package transport
 import (
 	"fmt"
 
-	"github.com/Lucky112/social/internal/storage"
+	"github.com/Lucky112/social/internal/storage/inmemory"
 	"github.com/Lucky112/social/internal/transport/auth"
 	"github.com/Lucky112/social/internal/transport/profiles"
 	jwtware "github.com/gofiber/contrib/jwt"
@@ -18,10 +18,10 @@ type Server struct {
 const signKey = "encription-key"
 
 func NewServer() Server {
-	authStorage := storage.NewAuthStorage()
+	authStorage := inmemory.NewAuthStorage()
 	authHandler := auth.NewAuthHandler(authStorage, signKey)
 
-	profileStorage := storage.NewProfileStorage()
+	profileStorage := inmemory.NewProfileStorage()
 	profilesHandler := profiles.NewProfilesHandler(profileStorage)
 
 	server := fiber.New()
