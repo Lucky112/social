@@ -5,7 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/guregu/null/v5"
+	"github.com/Lucky112/social/internal/models"
+	"github.com/Lucky112/social/internal/models/sex"
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/require"
 )
@@ -20,28 +21,47 @@ func TestAllProfiles(t *testing.T) {
 	p := ProfilesProvider{mock}
 
 	t.Run("Select successfully", func(t *testing.T) {
-		expected := []Profile{
+		expected := []models.Profile{
 			{
-				Id:      1,
-				Name:    null.StringFrom("user1"),
-				Surname: null.StringFrom("surname1"),
-				Sex:     null.StringFrom("male"),
-				Age:     null.Int16From(18),
+				Name:    "user1",
+				Surname: "surname1",
+				Sex:     sex.Male,
+				Age:     18,
+				Address: models.Address{
+					City:    "city1",
+					Country: "country1",
+				},
+				Hobbies: []models.Hobby{
+					{Title: "reading"},
+					{Title: "dancing"},
+				},
 			},
 			{
-				Id:      2,
-				Name:    null.StringFrom("user2"),
-				Surname: null.StringFrom("surname2"),
-				Sex:     null.StringFrom("female"),
-				Age:     null.Int16From(21),
+				Name:    "user2",
+				Surname: "surname2",
+				Sex:     sex.Female,
+				Age:     21,
+				Address: models.Address{
+					City:    "city2",
+					Country: "country2",
+				},
+				Hobbies: []models.Hobby{
+					{Title: "youtube"},
+				},
 			},
 		}
 
-		rows := mock.NewRows([]string{"id", "name", "surname", "age", "sex"}).
-			AddRow(int64(1), "user1", "surname1", 18, "male").
-			AddRow(int64(2), "user2", "surname2", 21, "female")
+		profiles := mock.NewRows([]string{"id", "name", "surname", "age", "sex", "city", "country"}).
+			AddRow(int64(1), "user1", "surname1", 18, "male", "city1", "country1").
+			AddRow(int64(2), "user2", "surname2", 21, "female", "city2", "country2")
 
-		mock.ExpectQuery("select").WithArgs().WillReturnRows(rows)
+		hobbies := mock.NewRows([]string{"id", "profile_id", "title"}).
+			AddRow(int64(100), int64(1), "reading").
+			AddRow(int64(101), int64(1), "dancing").
+			AddRow(int64(102), int64(2), "youtube")
+
+		mock.ExpectQuery("select").WithArgs().WillReturnRows(profiles)
+		mock.ExpectQuery("select").WithArgs().WillReturnRows(hobbies)
 
 		actual, err := p.GetAll(context.Background())
 		require.NoError(t, err)
@@ -60,7 +80,7 @@ func TestAllProfiles(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestSingleProfiles(t *testing.T) {
+func TestSingleProfile(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatal(err)
@@ -70,26 +90,40 @@ func TestSingleProfiles(t *testing.T) {
 	p := ProfilesProvider{mock}
 
 	t.Run("Select successfully", func(t *testing.T) {
-		expected := Profile{
-			Id:      1,
-			Name:    null.StringFrom("user1"),
-			Surname: null.StringFrom("surname1"),
-			Sex:     null.StringFrom("male"),
-			Age:     null.Int16From(18),
+		expected := models.Profile{
+			Name:    "user1",
+			Surname: "surname1",
+			Sex:     sex.Male,
+			Age:     18,
+			Address: models.Address{
+				City:    "city1",
+				Country: "country1",
+			},
+			Hobbies: []models.Hobby{
+				{Title: "reading"},
+				{Title: "dancing"},
+			},
 		}
 
-		rows := mock.NewRows([]string{"id", "name", "surname", "age", "sex"}).
+		profile := mock.NewRows([]string{"name", "surname", "age", "sex", "country", "city"}).
 			AddRow(
-				expected.Id,
-				expected.Name.String,
-				expected.Surname.String,
-				expected.Age.Int16,
-				expected.Sex.String,
+				expected.Name,
+				expected.Surname,
+				expected.Age,
+				expected.Sex.String(),
+				expected.Address.Country,
+				expected.Address.City,
 			)
 
-		mock.ExpectQuery("select").WithArgs(expected.Id).WillReturnRows(rows)
+		hobbies := mock.NewRows([]string{"id", "title"}).
+			AddRow(int64(100), "reading").
+			AddRow(int64(101), "dancing")
 
-		actual, err := p.Get(context.Background(), expected.Id)
+		profileId := int64(0)
+		mock.ExpectQuery("select").WithArgs(profileId).WillReturnRows(profile)
+		mock.ExpectQuery("select").WithArgs(profileId).WillReturnRows(hobbies)
+
+		actual, err := p.Get(context.Background(), 0)
 		require.NoError(t, err)
 		require.Equal(t, expected, *actual)
 	})
@@ -112,6 +146,48 @@ func TestSingleProfiles(t *testing.T) {
 		actual, err := p.Get(context.Background(), id)
 		require.Error(t, err)
 		require.Nil(t, actual)
+	})
+
+	err = mock.ExpectationsWereMet()
+	require.NoError(t, err)
+}
+
+func TestInsertProfile(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	p := ProfilesProvider{mock}
+
+	t.Run("Insert successfully", func(t *testing.T) {
+		prof := models.Profile{
+			Name:    "user1",
+			Surname: "surname1",
+			Sex:     sex.Male,
+			Age:     18,
+		}
+
+		rows := mock.NewRows([]string{})
+
+		mock.ExpectQuery("insert").WithArgs(prof.Name, prof.Surname, prof.Age, prof.Sex.String()).WillReturnRows(rows)
+
+		err := p.Add(context.Background(), &prof)
+		require.NoError(t, err)
+	})
+
+	t.Run("insert with error", func(t *testing.T) {
+		prof := models.Profile{
+			Name:    "user1",
+			Surname: "surname1",
+			Sex:     sex.Male,
+			Age:     18,
+		}
+		mock.ExpectQuery("insert").WithArgs(prof.Name, prof.Surname, prof.Age, prof.Sex.String()).WillReturnError(errors.New("db error"))
+
+		err := p.Add(context.Background(), &prof)
+		require.Error(t, err)
 	})
 
 	err = mock.ExpectationsWereMet()

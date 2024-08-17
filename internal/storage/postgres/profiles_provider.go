@@ -5,45 +5,130 @@ import (
 	"fmt"
 
 	"github.com/Lucky112/social/internal/models"
+	"github.com/Lucky112/social/internal/models/sex"
 	"github.com/georgysavva/scany/v2/pgxscan"
+	"github.com/jackc/pgx/v5"
 )
 
 type ProfilesProvider struct {
 	querier pgxscan.Querier
 }
 
-func (p ProfilesProvider) GetAll(ctx context.Context) ([]Profile, error) {
-	var profiles []Profile
+// TODO : add pagination
+func (p ProfilesProvider) GetAll(ctx context.Context) ([]models.Profile, error) {
+	var res []models.Profile
 
-	query := `
-		select
-			id,
-			name,
-			surname,
-			age,
-			sex
-		from scl.profiles
-	`
-
-	err := pgxscan.Select(ctx, p.querier, &profiles, query)
+	profilesInfo, err := p.getAllProfileInfo(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("executing query `%s`: %v", query, err)
+		return nil, fmt.Errorf("getting all profiles info: %v", err)
 	}
 
-	return profiles, nil
+	hobbies, err := p.getAllHobbies(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting all hobbies: %v", err)
+	}
+
+	for _, profileInfo := range profilesInfo {
+		sex, err := sex.FromString(profileInfo.Sex.String)
+		if err != nil {
+			return nil, fmt.Errorf("parsing sex: %v", err)
+		}
+
+		profile := models.Profile{
+			Name:    profileInfo.Name.String,
+			Surname: profileInfo.Surname.String,
+			Age:     uint8(profileInfo.Age.Int16),
+			Sex:     sex,
+			Address: models.Address{
+				Country: profileInfo.Country.String,
+				City:    profileInfo.City.String,
+			},
+		}
+
+		for _, h := range hobbies[profileInfo.Id] {
+			profile.Hobbies = append(profile.Hobbies, models.Hobby{
+				Title: h.Title.String,
+			})
+		}
+
+		res = append(res, profile)
+	}
+
+	return res, nil
 }
 
-func (p ProfilesProvider) Get(ctx context.Context, profileID int64) (*Profile, error) {
-	var profiles []Profile
+func (p ProfilesProvider) Get(ctx context.Context, profileID int64) (*models.Profile, error) {
+	profileInfo, err := p.getProfileInfo(ctx, profileID)
+	if err != nil {
+		return nil, fmt.Errorf("getting profile info of '%d': %v", profileID, err)
+	}
+
+	hobbies, err := p.getHobbies(ctx, profileID)
+	if err != nil {
+		return nil, fmt.Errorf("getting hobbies of '%d': %v", profileID, err)
+	}
+
+	sex, err := sex.FromString(profileInfo.Sex.String)
+	if err != nil {
+		return nil, fmt.Errorf("parsing sex: %v", err)
+	}
+
+	profile := &models.Profile{
+		Name:    profileInfo.Name.String,
+		Surname: profileInfo.Surname.String,
+		Age:     uint8(profileInfo.Age.Int16),
+		Sex:     sex,
+		Address: models.Address{
+			Country: profileInfo.Country.String,
+			City:    profileInfo.City.String,
+		},
+	}
+
+	for _, h := range hobbies {
+		profile.Hobbies = append(profile.Hobbies, models.Hobby{
+			Title: h.Title.String,
+		})
+	}
+
+	return profile, nil
+}
+
+func (p ProfilesProvider) Add(ctx context.Context, profile *models.Profile) error {
+	query := `
+		insert into scl.profiles(name, surname, age, sex)
+		values (@name, @surname, @age, @sex)
+	`
+
+	args := pgx.NamedArgs{
+		"name":    profile.Name,
+		"surname": profile.Surname,
+		"age":     profile.Age,
+		"sex":     profile.Sex.String(),
+	}
+
+	_, err := p.querier.Query(ctx, query, args)
+	if err != nil {
+		return fmt.Errorf("inserting into db: %v", err)
+	}
+
+	return nil
+}
+
+func (p ProfilesProvider) getProfileInfo(ctx context.Context, profileID int64) (*profile, error) {
+	var profiles []profile
 
 	query := `
 		select
-			id,
+			ps.id,
 			name,
 			surname,
 			age,
-			sex
-		from scl.profiles
+			sex,
+			city,
+			country
+		from scl.profiles as ps
+		left join scl.addresses as ads
+			on (ps.address_id = ads.id)
 		where id = $1
 	`
 
@@ -57,4 +142,77 @@ func (p ProfilesProvider) Get(ctx context.Context, profileID int64) (*Profile, e
 	}
 
 	return &profiles[0], nil
+}
+
+func (p ProfilesProvider) getHobbies(ctx context.Context, profileID int64) ([]hobby, error) {
+	var hobbies []hobby
+
+	query := `
+		select
+			h.id,
+			title
+		from scl.profiles as ps
+		join scl.profile_hobbies as phs
+			on (ps.id = phs.profile_id)
+		join scl.hobbies as hs
+			on (hs.id = phs.hobby_id)
+		where ps.id = $1
+	`
+
+	err := pgxscan.Select(ctx, p.querier, &hobbies, query, profileID)
+	if err != nil {
+		return nil, fmt.Errorf("executing query `%s`: %v", query, err)
+	}
+
+	return hobbies, nil
+}
+
+func (p ProfilesProvider) getAllProfileInfo(ctx context.Context) ([]profile, error) {
+	var profiles []profile
+
+	query := `
+		select
+			ps.id,
+			name,
+			surname,
+			age,
+			sex,
+			city,
+			country
+		from scl.profiles as ps
+		left join scl.addresses as ads
+			on (ps.address_id = ads.id)
+	`
+
+	err := pgxscan.Select(ctx, p.querier, &profiles, query)
+	if err != nil {
+		return nil, fmt.Errorf("executing query `%s`: %v", query, err)
+	}
+	return profiles, nil
+}
+
+func (p ProfilesProvider) getAllHobbies(ctx context.Context) (map[int64][]hobby, error) {
+	var hobbies []hobby
+
+	query := `
+	select
+			h.id,
+			phs.profile_id,
+			title
+		from scl.profile_hobbies as phs
+		join scl.hobbies as hs
+			on (hs.id = phs.hobby_id)
+	`
+
+	err := pgxscan.Select(ctx, p.querier, &hobbies, query)
+	if err != nil {
+		return nil, fmt.Errorf("executing query `%s`: %v", query, err)
+	}
+
+	res := make(map[int64][]hobby)
+	for _, h := range hobbies {
+		res[h.ProfileID] = append(res[h.ProfileID], h)
+	}
+
+	return res, nil
 }
