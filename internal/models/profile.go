@@ -1,20 +1,16 @@
 package models
 
-import "errors"
+import (
+	"errors"
 
-type Sex uint8
-
-const (
-	Unknown Sex = iota
-	Male
-	Female
+	"github.com/Lucky112/social/internal/models/sex"
 )
 
 type Profile struct {
 	id      string
 	Name    string
 	Surname string
-	Sex     Sex
+	Sex     sex.Sex
 	Age     uint8
 	Address Address
 	Hobbies []Hobby

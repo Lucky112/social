@@ -2,9 +2,9 @@ package profiles
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/Lucky112/social/internal/models"
+	"github.com/Lucky112/social/internal/models/sex"
 )
 
 type profile struct {
@@ -28,16 +28,9 @@ func (p *profile) toModel() (*models.Profile, error) {
 		}
 	}
 
-	var sex models.Sex
-	switch strings.ToLower(p.Sex) {
-	case "":
-		sex = models.Unknown
-	case "male":
-		sex = models.Male
-	case "female":
-		sex = models.Female
-	default:
-		return nil, fmt.Errorf("unknown sex '%s': only %v are available", p.Sex, []string{"Male", "Female"})
+	sex, err := sex.FromString(p.Sex)
+	if err != nil {
+		return nil, fmt.Errorf("extracting sex: %v", err)
 	}
 
 	return &models.Profile{
@@ -58,18 +51,10 @@ func fromModel(mp *models.Profile) *profile {
 		hobbies[i] = h.Title
 	}
 
-	var sex string
-	switch mp.Sex {
-	case models.Male:
-		sex = "Male"
-	case models.Female:
-		sex = "Female"
-	}
-
 	return &profile{
 		Name:    mp.Name,
 		Surname: mp.Surname,
-		Sex:     sex,
+		Sex:     mp.Sex.String(),
 		Age:     mp.Age,
 		City:    mp.Address.City,
 		Hobbies: hobbies,
