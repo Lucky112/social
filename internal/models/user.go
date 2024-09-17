@@ -7,7 +7,7 @@ type User struct {
 	Id       string
 	Email    string
 	Login    string
-	Password string
+	Password []byte
 }
 
 var UserNotFound = errors.New("user not found")

@@ -80,10 +80,11 @@ func TestAuth(t *testing.T) {
 	})
 
 	t.Run("test Login successfully", func(t *testing.T) {
+		hashedPwd, _ := hashAndSalt([]byte("password"))
 		user := &models.User{
 			Email:    "email",
 			Login:    "name",
-			Password: "password",
+			Password: hashedPwd,
 		}
 
 		storage.On("Get", mock.Anything, "login").Return(user, nil).Once()
@@ -103,10 +104,11 @@ func TestAuth(t *testing.T) {
 	})
 
 	t.Run("test Login with wrong password", func(t *testing.T) {
+		hashedPwd, _ := hashAndSalt([]byte("password"))
 		user := &models.User{
 			Email:    "email",
 			Login:    "name",
-			Password: "password",
+			Password: hashedPwd,
 		}
 
 		storage.On("Get", mock.Anything, "login").Return(user, nil).Once()

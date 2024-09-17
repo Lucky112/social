@@ -8,6 +8,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/Lucky112/social/internal/models"
 )
@@ -50,10 +51,18 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 		return nil
 	}
 
+	hashedPassword, err := hashAndSalt([]byte(regReq.Password))
+	if err != nil {
+		c.Status(fiber.StatusBadRequest).JSON(
+			registerError{fmt.Sprintf("invalid password: %v", err)},
+		)
+		return nil
+	}
+
 	user := &models.User{
 		Email:    regReq.Email,
 		Login:    regReq.Login,
-		Password: regReq.Password,
+		Password: hashedPassword,
 	}
 
 	exists, err := h.storage.Exists(c.Context(), user)
@@ -119,7 +128,8 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 		return nil
 	}
 
-	if user.Password != loginReq.Password {
+	err = checkHash([]byte(loginReq.Password), user.Password)
+	if err != nil {
 		c.Status(fiber.StatusBadRequest).JSON(
 			loginError{errBadCredentials.Error()},
 		)
@@ -144,6 +154,24 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	err = c.JSON(loginResponse{AccessToken: t})
 	if err != nil {
 		return fmt.Errorf("sending response: %v", err)
+	}
+
+	return nil
+}
+
+func hashAndSalt(password []byte) ([]byte, error) {
+	hash, err := bcrypt.GenerateFromPassword(password, 14)
+	if err != nil {
+		return nil, fmt.Errorf("hashing password: %v", err)
+	}
+
+	return hash, nil
+}
+
+func checkHash(pwd, hashedPwd []byte) error {
+	err := bcrypt.CompareHashAndPassword(hashedPwd, pwd)
+	if err != nil {
+		return fmt.Errorf("comparing passwords: %v", err)
 	}
 
 	return nil

@@ -23,7 +23,7 @@ func TestUserExists(t *testing.T) {
 		user := &models.User{
 			Email:    "myemail@index.com",
 			Login:    "mylogin",
-			Password: "pwd",
+			Password: []byte("pwd"),
 		}
 
 		exists := mock.NewRows([]string{"exists"}).
@@ -40,7 +40,7 @@ func TestUserExists(t *testing.T) {
 		user := &models.User{
 			Email:    "myemail@index.com",
 			Login:    "mylogin",
-			Password: "pwd",
+			Password: []byte("pwd"),
 		}
 
 		notExists := mock.NewRows([]string{"exists"}).
@@ -60,7 +60,7 @@ func TestUserExists(t *testing.T) {
 		user := &models.User{
 			Email:    "myemail@index.com",
 			Login:    "mylogin",
-			Password: "pwd",
+			Password: []byte("pwd"),
 		}
 
 		notExists := mock.NewRows([]string{"exists"}).
@@ -99,11 +99,11 @@ func TestSingleUser(t *testing.T) {
 		expected := models.User{
 			Email:    "myemail@index.com",
 			Login:    "mylogin",
-			Password: "pwd",
+			Password: []byte("pwd"),
 		}
 
 		users := mock.NewRows([]string{"id", "email", "login", "password"}).
-			AddRow(int64(1), "myemail@index.com", "mylogin", "pwd")
+			AddRow(int64(1), "myemail@index.com", "mylogin", []byte("pwd"))
 
 		mock.ExpectQuery("select").WithArgs("login").WillReturnRows(users)
 
@@ -147,7 +147,7 @@ func TestInsertUser(t *testing.T) {
 		user := models.User{
 			Email:    "myemail@index.com",
 			Login:    "mylogin",
-			Password: "pwd",
+			Password: []byte("pwd"),
 		}
 
 		rows := mock.NewRows([]string{"id"}).AddRow(int64(1))
@@ -163,7 +163,7 @@ func TestInsertUser(t *testing.T) {
 		user := models.User{
 			Email:    "myemail@index.com",
 			Login:    "mylogin",
-			Password: "pwd",
+			Password: []byte("pwd"),
 		}
 
 		mock.ExpectQuery("insert").WithArgs(user.Email, user.Login, user.Password).WillReturnError(errors.New("db error"))
