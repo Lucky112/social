@@ -1,6 +1,7 @@
 package inmemory
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/Lucky112/social/internal/models"
@@ -12,7 +13,7 @@ func NewProfileStorage() ProfileStorage {
 	return make(ProfileStorage)
 }
 
-func (ps ProfileStorage) GetAll() ([]*models.Profile, error) {
+func (ps ProfileStorage) GetAll(ctx context.Context) ([]*models.Profile, error) {
 	res := make([]*models.Profile, 0, len(ps))
 
 	for _, p := range ps {
@@ -22,7 +23,7 @@ func (ps ProfileStorage) GetAll() ([]*models.Profile, error) {
 	return res, nil
 }
 
-func (ps ProfileStorage) Get(id string) (*models.Profile, error) {
+func (ps ProfileStorage) Get(ctx context.Context, id string) (*models.Profile, error) {
 	p, exists := ps[id]
 	if !exists {
 		return nil, fmt.Errorf("looking '%s' up: %w", id, models.ProfileNotFound)
@@ -31,11 +32,13 @@ func (ps ProfileStorage) Get(id string) (*models.Profile, error) {
 	return p, nil
 }
 
-func (ps ProfileStorage) Add(id string, profile *models.Profile) error {
+func (ps ProfileStorage) Add(ctx context.Context, profile *models.Profile) (string, error) {
 	if profile == nil {
-		return fmt.Errorf("attempt to store nil profile for id '%s'", id)
+		return "", fmt.Errorf("attempt to store nil profile")
 	}
 
+	id := generateId()
 	ps[id] = profile
-	return nil
+
+	return id, nil
 }
