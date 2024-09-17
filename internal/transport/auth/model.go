@@ -3,8 +3,11 @@ package auth
 // Структура HTTP-запроса на регистрацию пользователя
 type registerRequest struct {
 	Email    string `json:"email"    validate:"required"`
-	Name     string `json:"name"     validate:"required"`
+	Login    string `json:"login"    validate:"required"`
 	Password string `json:"password" validate:"required"`
+}
+type registerResponse struct {
+	Id string `json:"id"`
 }
 type registerError struct {
 	Message string `json:"msg"`
@@ -12,7 +15,7 @@ type registerError struct {
 
 // Структура HTTP-запроса на вход в аккаунт
 type loginRequest struct {
-	Email    string `json:"email"    validate:"required"`
+	Login    string `json:"login"    validate:"required"`
 	Password string `json:"password" validate:"required"`
 }
 

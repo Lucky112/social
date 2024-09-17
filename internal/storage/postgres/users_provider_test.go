@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAllUsers(t *testing.T) {
+func TestUserExists(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatal(err)
@@ -19,37 +19,67 @@ func TestAllUsers(t *testing.T) {
 
 	p := UsersProvider{mock}
 
-	t.Run("Select successfully", func(t *testing.T) {
-		expected := []models.User{
-			{
-				Email:    "myemail@index.com",
-				Login:    "mylogin",
-				Password: "pwd",
-			},
-			{
-				Email:    "newemail@index.com",
-				Login:    "newlogin",
-				Password: "pwd2",
-			},
+	t.Run("Email exists", func(t *testing.T) {
+		user := &models.User{
+			Email:    "myemail@index.com",
+			Login:    "mylogin",
+			Password: "pwd",
 		}
 
-		users := mock.NewRows([]string{"id", "email", "login", "password"}).
-			AddRow(int64(1), "myemail@index.com", "mylogin", "pwd").
-			AddRow(int64(2), "newemail@index.com", "newlogin", "pwd2")
+		exists := mock.NewRows([]string{"exists"}).
+			AddRow(true)
 
-		mock.ExpectQuery("select").WithArgs().WillReturnRows(users)
+		mock.ExpectQuery("select").WithArgs(user.Email).WillReturnRows(exists)
 
-		actual, err := p.GetAll(context.Background())
+		actual, err := p.Exists(context.Background(), user)
 		require.NoError(t, err)
-		require.Equal(t, expected, actual)
+		require.True(t, actual)
 	})
 
-	t.Run("select with error", func(t *testing.T) {
-		mock.ExpectQuery("select").WillReturnError(errors.New("db error"))
+	t.Run("Login exists", func(t *testing.T) {
+		user := &models.User{
+			Email:    "myemail@index.com",
+			Login:    "mylogin",
+			Password: "pwd",
+		}
 
-		actual, err := p.GetAll(context.Background())
+		notExists := mock.NewRows([]string{"exists"}).
+			AddRow(false)
+		exists := mock.NewRows([]string{"exists"}).
+			AddRow(true)
+
+		mock.ExpectQuery("select").WithArgs(user.Email).WillReturnRows(notExists)
+		mock.ExpectQuery("select").WithArgs(user.Login).WillReturnRows(exists)
+
+		actual, err := p.Exists(context.Background(), user)
+		require.NoError(t, err)
+		require.True(t, actual)
+	})
+
+	t.Run("Nothing exists", func(t *testing.T) {
+		user := &models.User{
+			Email:    "myemail@index.com",
+			Login:    "mylogin",
+			Password: "pwd",
+		}
+
+		notExists := mock.NewRows([]string{"exists"}).
+			AddRow(false)
+
+		mock.ExpectQuery("select").WithArgs(user.Email).WillReturnRows(notExists)
+		mock.ExpectQuery("select").WithArgs(user.Login).WillReturnRows(notExists)
+
+		actual, err := p.Exists(context.Background(), user)
+		require.NoError(t, err)
+		require.False(t, actual)
+	})
+
+	t.Run("exists with error", func(t *testing.T) {
+		mock.ExpectQuery("select").WithArgs("").WillReturnError(errors.New("db error"))
+
+		actual, err := p.Exists(context.Background(), &models.User{})
 		require.Error(t, err)
-		require.Nil(t, actual)
+		require.False(t, actual)
 	})
 
 	err = mock.ExpectationsWereMet()
@@ -75,10 +105,9 @@ func TestSingleUser(t *testing.T) {
 		users := mock.NewRows([]string{"id", "email", "login", "password"}).
 			AddRow(int64(1), "myemail@index.com", "mylogin", "pwd")
 
-		profileId := int64(0)
-		mock.ExpectQuery("select").WithArgs(profileId).WillReturnRows(users)
+		mock.ExpectQuery("select").WithArgs("login").WillReturnRows(users)
 
-		actual, err := p.Get(context.Background(), profileId)
+		actual, err := p.Get(context.Background(), "login")
 		require.NoError(t, err)
 		require.Equal(t, expected, *actual)
 	})
@@ -86,19 +115,17 @@ func TestSingleUser(t *testing.T) {
 	t.Run("select nothing found", func(t *testing.T) {
 		rows := mock.NewRows([]string{"id", "email", "login", "password"})
 
-		id := int64(1)
-		mock.ExpectQuery("select").WithArgs(id).WillReturnRows(rows)
+		mock.ExpectQuery("select").WithArgs("login").WillReturnRows(rows)
 
-		actual, err := p.Get(context.Background(), id)
+		actual, err := p.Get(context.Background(), "login")
 		require.Error(t, err)
 		require.Nil(t, actual)
 	})
 
 	t.Run("select with error", func(t *testing.T) {
-		id := int64(1)
-		mock.ExpectQuery("select").WithArgs(id).WillReturnError(errors.New("db error"))
+		mock.ExpectQuery("select").WithArgs("login").WillReturnError(errors.New("db error"))
 
-		actual, err := p.Get(context.Background(), id)
+		actual, err := p.Get(context.Background(), "login")
 		require.Error(t, err)
 		require.Nil(t, actual)
 	})
@@ -123,12 +150,13 @@ func TestInsertUser(t *testing.T) {
 			Password: "pwd",
 		}
 
-		rows := mock.NewRows([]string{})
+		rows := mock.NewRows([]string{"id"}).AddRow(int64(1))
 
 		mock.ExpectQuery("insert").WithArgs(user.Email, user.Login, user.Password).WillReturnRows(rows)
 
-		err := p.Add(context.Background(), &user)
+		id, err := p.Add(context.Background(), &user)
 		require.NoError(t, err)
+		require.Equal(t, "1", id)
 	})
 
 	t.Run("insert with error", func(t *testing.T) {
@@ -140,8 +168,9 @@ func TestInsertUser(t *testing.T) {
 
 		mock.ExpectQuery("insert").WithArgs(user.Email, user.Login, user.Password).WillReturnError(errors.New("db error"))
 
-		err := p.Add(context.Background(), &user)
+		id, err := p.Add(context.Background(), &user)
 		require.Error(t, err)
+		require.Equal(t, "", id)
 	})
 
 	err = mock.ExpectationsWereMet()

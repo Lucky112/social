@@ -19,6 +19,9 @@ type profile struct {
 type profileResponse struct {
 	Id string `json:"id"`
 }
+type profileError struct {
+	Message string `json:"msg"`
+}
 
 func (p *profile) toModel() (*models.Profile, error) {
 	hobbies := make([]models.Hobby, len(p.Hobbies))

@@ -23,8 +23,8 @@ func TestAuth(t *testing.T) {
 	app.Post("/login", authHandler.Login)
 
 	t.Run("test Register", func(t *testing.T) {
-		storage.On("Exists", "any string").Return(false).Once()
-		storage.On("Add", "any string", mock.Anything).Return(nil).Once()
+		storage.On("Exists", mock.Anything, mock.Anything).Return(false, nil).Once()
+		storage.On("Add", mock.Anything, mock.Anything).Return("1", nil).Once()
 
 		body := strings.NewReader(`{
 			"email": "any string",
@@ -41,7 +41,7 @@ func TestAuth(t *testing.T) {
 	})
 
 	t.Run("test Register again", func(t *testing.T) {
-		storage.On("Exists", "any string").Return(true).Once()
+		storage.On("Exists", mock.Anything, mock.Anything).Return(true, nil).Once()
 
 		body := strings.NewReader(`{
 			"email": "any string",
@@ -86,10 +86,11 @@ func TestAuth(t *testing.T) {
 			Password: "password",
 		}
 
-		storage.On("Get", "email", mock.Anything).Return(user, nil).Once()
+		storage.On("Get", mock.Anything, "login").Return(user, nil).Once()
 
 		body := strings.NewReader(`{
 			"email": "email",
+			"login": "login",
 			"password": "password"
 		}`)
 
@@ -108,10 +109,11 @@ func TestAuth(t *testing.T) {
 			Password: "password",
 		}
 
-		storage.On("Get", "email", mock.Anything).Return(user, nil).Once()
+		storage.On("Get", mock.Anything, "login").Return(user, nil).Once()
 
 		body := strings.NewReader(`{
 			"email": "email",
+			"login": "login",
 			"password": "wrong password"
 		}`)
 
@@ -123,11 +125,12 @@ func TestAuth(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	})
 
-	t.Run("test Login with unknown email", func(t *testing.T) {
-		storage.On("Get", "unknown email", mock.Anything).Return(nil, fmt.Errorf("%w", models.UserNotFound)).Once()
+	t.Run("test Login with unknown login", func(t *testing.T) {
+		storage.On("Get", mock.Anything, "unknown login").Return(nil, fmt.Errorf("%w", models.UserNotFound)).Once()
 
 		body := strings.NewReader(`{
-			"email": "unknown email",
+			"email": "email",
+			"login": "unknown login",
 			"password": "password"
 		}`)
 
@@ -136,7 +139,7 @@ func TestAuth(t *testing.T) {
 
 		resp, err := app.Test(req, -1)
 		assert.NoError(t, err)
-		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 	})
 
 	t.Run("test Login bad json", func(t *testing.T) {

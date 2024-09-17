@@ -169,12 +169,13 @@ func TestInsertProfile(t *testing.T) {
 			Age:     18,
 		}
 
-		rows := mock.NewRows([]string{})
+		rows := mock.NewRows([]string{"id"}).AddRow(int64(1))
 
 		mock.ExpectQuery("insert").WithArgs(prof.Name, prof.Surname, prof.Age, prof.Sex.String()).WillReturnRows(rows)
 
-		err := p.Add(context.Background(), &prof)
+		id, err := p.Add(context.Background(), &prof)
 		require.NoError(t, err)
+		require.Equal(t, "1", id)
 	})
 
 	t.Run("insert with error", func(t *testing.T) {
@@ -186,8 +187,9 @@ func TestInsertProfile(t *testing.T) {
 		}
 		mock.ExpectQuery("insert").WithArgs(prof.Name, prof.Surname, prof.Age, prof.Sex.String()).WillReturnError(errors.New("db error"))
 
-		err := p.Add(context.Background(), &prof)
+		id, err := p.Add(context.Background(), &prof)
 		require.Error(t, err)
+		require.Equal(t, "", id)
 	})
 
 	err = mock.ExpectationsWereMet()

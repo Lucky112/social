@@ -1,13 +1,14 @@
 package profiles
 
 import (
+	"errors"
 	"fmt"
 
+	"github.com/Lucky112/social/internal/models"
 	"github.com/gofiber/fiber/v2"
-	"github.com/google/uuid"
 )
 
-// Обработчик HTTP-запросов на регистрацию и аутентификацию пользователей
+// Обработчик HTTP-запросов на создание и просмотр анкет
 type ProfilesHandler struct {
 	storage ProfilesStorage
 }
@@ -24,18 +25,26 @@ func (h *ProfilesHandler) CreateProfile(c *fiber.Ctx) error {
 	fmt.Println(string(c.Body()))
 	err := c.BodyParser(&payload)
 	if err != nil {
-		return fmt.Errorf("parsing body: %v", err)
+		c.Status(fiber.StatusBadRequest).JSON(
+			profileError{fmt.Sprintf("failed to parse body: %v", err)},
+		)
+		return nil
 	}
 
 	p, err := payload.toModel()
 	if err != nil {
-		return fmt.Errorf("parsing profile: %v", err)
+		c.Status(fiber.StatusBadRequest).JSON(
+			profileError{fmt.Sprintf("failed to parse profile: %v", err)},
+		)
+		return nil
 	}
-	id := generateId()
 
-	err = h.storage.Add(id, p)
+	id, err := h.storage.Add(c.Context(), p)
 	if err != nil {
-		return fmt.Errorf("storing profile: %v", err)
+		c.Status(fiber.StatusInternalServerError).JSON(
+			profileError{fmt.Sprintf("failed to save profile: %v", err)},
+		)
+		return nil
 	}
 
 	err = c.JSON(profileResponse{id})
@@ -50,9 +59,19 @@ func (h *ProfilesHandler) CreateProfile(c *fiber.Ctx) error {
 func (h *ProfilesHandler) GetProfile(c *fiber.Ctx) error {
 	id := c.Params("id")
 
-	p, err := h.storage.Get(id)
+	p, err := h.storage.Get(c.Context(), id)
 	if err != nil {
-		return fmt.Errorf("getting profile: %v", err)
+		if errors.Is(err, models.ProfileNotFound) {
+			c.Status(fiber.StatusNotFound).JSON(
+				profileError{err.Error()},
+			)
+			return nil
+		}
+
+		c.Status(fiber.StatusInternalServerError).JSON(
+			profileError{fmt.Sprintf("failed to find profile: %v", err)},
+		)
+		return nil
 	}
 
 	payload := fromModel(p)
@@ -67,9 +86,12 @@ func (h *ProfilesHandler) GetProfile(c *fiber.Ctx) error {
 
 // Обработчик HTTP-запросов на список анкет
 func (h *ProfilesHandler) GetProfiles(c *fiber.Ctx) error {
-	profiles, err := h.storage.GetAll()
+	profiles, err := h.storage.GetAll(c.Context())
 	if err != nil {
-		return fmt.Errorf("getting profile: %v", err)
+		c.Status(fiber.StatusInternalServerError).JSON(
+			profileError{fmt.Sprintf("failed to get all profiles: %v", err)},
+		)
+		return nil
 	}
 
 	payload := make([]*profile, len(profiles))
@@ -83,8 +105,4 @@ func (h *ProfilesHandler) GetProfiles(c *fiber.Ctx) error {
 		return fmt.Errorf("sending response: %v", err)
 	}
 	return nil
-}
-
-func generateId() string {
-	return uuid.NewString()
 }

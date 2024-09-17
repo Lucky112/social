@@ -1,10 +1,14 @@
 package auth
 
-import "github.com/Lucky112/social/internal/models"
+import (
+	"context"
+
+	"github.com/Lucky112/social/internal/models"
+)
 
 // Хранилище зарегистрированных пользователей
 type AuthStorage interface {
-	Exists(userId string) bool
-	Get(userId string) (*models.User, error)
-	Add(userId string, user *models.User) error
+	Exists(ctx context.Context, user *models.User) (bool, error)
+	Get(ctx context.Context, userId string) (*models.User, error)
+	Add(ctx context.Context, user *models.User) (string, error)
 }

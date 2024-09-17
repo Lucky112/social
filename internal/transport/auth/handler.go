@@ -50,32 +50,45 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 		return nil
 	}
 
-	exists := h.storage.Exists(regReq.Email)
+	user := &models.User{
+		Email:    regReq.Email,
+		Login:    regReq.Login,
+		Password: regReq.Password,
+	}
+
+	exists, err := h.storage.Exists(c.Context(), user)
+	if err != nil {
+		c.Status(fiber.StatusInternalServerError).JSON(
+			registerError{fmt.Sprintf("failed to check user existence: %v", err)},
+		)
+		return nil
+	}
 	if exists {
 		c.Status(fiber.StatusBadRequest).JSON(
-			registerError{"the user already exists"},
+			registerError{"the user for given email or login already exists"},
 		)
 		return nil
 	}
 
-	h.storage.Add(regReq.Email, &models.User{
-		Email:    regReq.Email,
-		Login:    regReq.Name,
-		Password: regReq.Password,
-	})
-
-	err = c.SendStatus(fiber.StatusCreated)
+	id, err := h.storage.Add(c.Context(), user)
 	if err != nil {
-		return fmt.Errorf("sending status code: %v", err)
+		c.Status(fiber.StatusInternalServerError).JSON(
+			registerError{fmt.Sprintf("failed to create user: %v", err)},
+		)
+		return nil
 	}
+
+	c.Status(fiber.StatusCreated).JSON(
+		registerResponse{id},
+	)
 
 	return nil
 }
 
 // Обработчик HTTP-запросов на вход в аккаунт
 func (h *AuthHandler) Login(c *fiber.Ctx) error {
-	regReq := loginRequest{}
-	err := c.BodyParser(&regReq)
+	loginReq := loginRequest{}
+	err := c.BodyParser(&loginReq)
 	if err != nil {
 		c.Status(fiber.StatusBadRequest).JSON(
 			loginError{fmt.Sprintf("failed to parse body: %v", err)},
@@ -83,7 +96,7 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 		return nil
 	}
 
-	err = h.validate.Struct(regReq)
+	err = h.validate.Struct(loginReq)
 	if err != nil {
 		c.Status(fiber.StatusBadRequest).JSON(
 			loginError{fmt.Sprintf("invalid body: %v", err)},
@@ -91,10 +104,10 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 		return nil
 	}
 
-	user, err := h.storage.Get(regReq.Email)
+	user, err := h.storage.Get(c.Context(), loginReq.Login)
 	if err != nil {
 		if errors.Is(err, models.UserNotFound) {
-			c.Status(fiber.StatusBadRequest).JSON(
+			c.Status(fiber.StatusNotFound).JSON(
 				loginError{err.Error()},
 			)
 			return nil
@@ -106,7 +119,7 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 		return nil
 	}
 
-	if user.Password != regReq.Password {
+	if user.Password != loginReq.Password {
 		c.Status(fiber.StatusBadRequest).JSON(
 			loginError{errBadCredentials.Error()},
 		)

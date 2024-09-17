@@ -13,31 +13,30 @@ type UsersProvider struct {
 	querier pgxscan.Querier
 }
 
-// TODO : add pagination
-func (p UsersProvider) GetAll(ctx context.Context) ([]models.User, error) {
-	var res []models.User
-
-	users, err := p.getAllUserInfo(ctx)
+func (p UsersProvider) Exists(ctx context.Context, user *models.User) (bool, error) {
+	emailExists, err := p.checkEmailExists(ctx, user.Email)
 	if err != nil {
-		return nil, fmt.Errorf("getting all users info: %v", err)
+		return false, fmt.Errorf("checking email exists: %v", err)
+	}
+	if emailExists {
+		return true, nil
 	}
 
-	for _, user := range users {
-		res = append(res, models.User{
-			Email:    user.Email.String,
-			Login:    user.Login.String,
-			Password: user.Password.String,
-		})
+	loginExists, err := p.checkLoginExists(ctx, user.Login)
+	if err != nil {
+		return false, fmt.Errorf("checking login exists: %v", err)
+	}
+	if loginExists {
+		return true, nil
 	}
 
-	return res, nil
-
+	return false, nil
 }
 
-func (p UsersProvider) Get(ctx context.Context, userId int64) (*models.User, error) {
-	user, err := p.getUserInfo(ctx, userId)
+func (p UsersProvider) Get(ctx context.Context, login string) (*models.User, error) {
+	user, err := p.getUserInfo(ctx, login)
 	if err != nil {
-		return nil, fmt.Errorf("getting user info of '%d': %v", userId, err)
+		return nil, fmt.Errorf("getting user info of '%s': %v", login, err)
 	}
 
 	return &models.User{
@@ -47,10 +46,11 @@ func (p UsersProvider) Get(ctx context.Context, userId int64) (*models.User, err
 	}, nil
 }
 
-func (p UsersProvider) Add(ctx context.Context, user *models.User) error {
+func (p UsersProvider) Add(ctx context.Context, user *models.User) (string, error) {
 	query := `
 		insert into scl.users(email, login, password)
 		values (@email, @login, @password)
+		returning id
 	`
 
 	args := pgx.NamedArgs{
@@ -59,15 +59,28 @@ func (p UsersProvider) Add(ctx context.Context, user *models.User) error {
 		"password": user.Password,
 	}
 
-	_, err := p.querier.Query(ctx, query, args)
+	rows, err := p.querier.Query(ctx, query, args)
 	if err != nil {
-		return fmt.Errorf("inserting into db: %v", err)
+		return "", fmt.Errorf("inserting into db: %v", err)
 	}
 
-	return nil
+	id, err := pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (int64, error) {
+		var id int64
+		err := row.Scan(&id)
+		if err != nil {
+			return 0, fmt.Errorf("scanning user id: %v", err)
+		}
+
+		return id, nil
+	})
+	if err != nil {
+		return "", fmt.Errorf("collecting new user id: %v", err)
+	}
+
+	return fmt.Sprintf("%d", id), nil
 }
 
-func (p UsersProvider) getUserInfo(ctx context.Context, userID int64) (*user, error) {
+func (p UsersProvider) getUserInfo(ctx context.Context, login string) (*user, error) {
 	var users []user
 
 	query := `
@@ -77,10 +90,10 @@ func (p UsersProvider) getUserInfo(ctx context.Context, userID int64) (*user, er
 			password,
 			email
 		from scl.users
-		where id = $1
+		where login = $1
 	`
 
-	err := pgxscan.Select(ctx, p.querier, &users, query, userID)
+	err := pgxscan.Select(ctx, p.querier, &users, query, login)
 	if err != nil {
 		return nil, fmt.Errorf("executing query `%s`: %v", query, err)
 	}
@@ -92,22 +105,54 @@ func (p UsersProvider) getUserInfo(ctx context.Context, userID int64) (*user, er
 	return &users[0], nil
 }
 
-func (p UsersProvider) getAllUserInfo(ctx context.Context) ([]user, error) {
-	var users []user
+func (p UsersProvider) checkEmailExists(ctx context.Context, email string) (bool, error) {
+	var res []bool
 
 	query := `
 		select
-			id,
-			login,
-			password,
-			email
-		from scl.users
+			exists(
+				select
+					1
+				from scl.users
+				where email = $1
+				limit 1
+			) as exists
 	`
 
-	err := pgxscan.Select(ctx, p.querier, &users, query)
+	err := pgxscan.Select(ctx, p.querier, &res, query, email)
 	if err != nil {
-		return nil, fmt.Errorf("executing query `%s`: %v", query, err)
+		return false, fmt.Errorf("executing query `%s`: %v", query, err)
 	}
 
-	return users, nil
+	if len(res) == 0 {
+		return false, nil
+	}
+
+	return res[0], nil
+}
+
+func (p UsersProvider) checkLoginExists(ctx context.Context, login string) (bool, error) {
+	var res []bool
+
+	query := `
+		select
+			exists(
+				select
+					1
+				from scl.users
+				where login = $1
+				limit 1
+			) as exists
+	`
+
+	err := pgxscan.Select(ctx, p.querier, &res, query, login)
+	if err != nil {
+		return false, fmt.Errorf("executing query `%s`: %v", query, err)
+	}
+
+	if len(res) == 0 {
+		return false, nil
+	}
+
+	return res[0], nil
 }

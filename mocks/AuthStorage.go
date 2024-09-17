@@ -3,6 +3,8 @@
 package mocks
 
 import (
+	context "context"
+
 	models "github.com/Lucky112/social/internal/models"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -12,45 +14,65 @@ type AuthStorage struct {
 	mock.Mock
 }
 
-// Add provides a mock function with given fields: userId, user
-func (_m *AuthStorage) Add(userId string, user *models.User) error {
-	ret := _m.Called(userId, user)
+// Add provides a mock function with given fields: ctx, user
+func (_m *AuthStorage) Add(ctx context.Context, user *models.User) (string, error) {
+	ret := _m.Called(ctx, user)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Add")
 	}
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(string, *models.User) error); ok {
-		r0 = rf(userId, user)
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *models.User) (string, error)); ok {
+		return rf(ctx, user)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *models.User) string); ok {
+		r0 = rf(ctx, user)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(string)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(context.Context, *models.User) error); ok {
+		r1 = rf(ctx, user)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
-// Exists provides a mock function with given fields: userId
-func (_m *AuthStorage) Exists(userId string) bool {
-	ret := _m.Called(userId)
+// Exists provides a mock function with given fields: ctx, user
+func (_m *AuthStorage) Exists(ctx context.Context, user *models.User) (bool, error) {
+	ret := _m.Called(ctx, user)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Exists")
 	}
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(string) bool); ok {
-		r0 = rf(userId)
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *models.User) (bool, error)); ok {
+		return rf(ctx, user)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *models.User) bool); ok {
+		r0 = rf(ctx, user)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(context.Context, *models.User) error); ok {
+		r1 = rf(ctx, user)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
-// Get provides a mock function with given fields: userId
-func (_m *AuthStorage) Get(userId string) (*models.User, error) {
-	ret := _m.Called(userId)
+// Get provides a mock function with given fields: ctx, userId
+func (_m *AuthStorage) Get(ctx context.Context, userId string) (*models.User, error) {
+	ret := _m.Called(ctx, userId)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Get")
@@ -58,19 +80,19 @@ func (_m *AuthStorage) Get(userId string) (*models.User, error) {
 
 	var r0 *models.User
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string) (*models.User, error)); ok {
-		return rf(userId)
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*models.User, error)); ok {
+		return rf(ctx, userId)
 	}
-	if rf, ok := ret.Get(0).(func(string) *models.User); ok {
-		r0 = rf(userId)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *models.User); ok {
+		r0 = rf(ctx, userId)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*models.User)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(userId)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, userId)
 	} else {
 		r1 = ret.Error(1)
 	}

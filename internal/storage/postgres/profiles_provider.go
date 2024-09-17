@@ -93,10 +93,11 @@ func (p ProfilesProvider) Get(ctx context.Context, profileID int64) (*models.Pro
 	return profile, nil
 }
 
-func (p ProfilesProvider) Add(ctx context.Context, profile *models.Profile) error {
+func (p ProfilesProvider) Add(ctx context.Context, profile *models.Profile) (string, error) {
 	query := `
 		insert into scl.profiles(name, surname, age, sex)
 		values (@name, @surname, @age, @sex)
+		returning id
 	`
 
 	args := pgx.NamedArgs{
@@ -106,12 +107,25 @@ func (p ProfilesProvider) Add(ctx context.Context, profile *models.Profile) erro
 		"sex":     profile.Sex.String(),
 	}
 
-	_, err := p.querier.Query(ctx, query, args)
+	rows, err := p.querier.Query(ctx, query, args)
 	if err != nil {
-		return fmt.Errorf("inserting into db: %v", err)
+		return "", fmt.Errorf("inserting into db: %v", err)
 	}
 
-	return nil
+	id, err := pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (int64, error) {
+		var id int64
+		err := row.Scan(&id)
+		if err != nil {
+			return 0, fmt.Errorf("scanning profile id: %v", err)
+		}
+
+		return id, nil
+	})
+	if err != nil {
+		return "", fmt.Errorf("collecting new profile id: %v", err)
+	}
+
+	return fmt.Sprintf("%d", id), nil
 }
 
 func (p ProfilesProvider) getProfileInfo(ctx context.Context, profileID int64) (*profile, error) {
