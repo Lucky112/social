@@ -82,7 +82,7 @@ func TestAuth(t *testing.T) {
 	t.Run("test Login successfully", func(t *testing.T) {
 		user := &models.User{
 			Email:    "email",
-			Name:     "name",
+			Login:    "name",
 			Password: "password",
 		}
 
@@ -104,7 +104,7 @@ func TestAuth(t *testing.T) {
 	t.Run("test Login with wrong password", func(t *testing.T) {
 		user := &models.User{
 			Email:    "email",
-			Name:     "name",
+			Login:    "name",
 			Password: "password",
 		}
 

@@ -60,7 +60,7 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 
 	h.storage.Add(regReq.Email, &models.User{
 		Email:    regReq.Email,
-		Name:     regReq.Name,
+		Login:    regReq.Name,
 		Password: regReq.Password,
 	})
 
