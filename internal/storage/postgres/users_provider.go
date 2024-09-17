@@ -40,6 +40,7 @@ func (p UsersProvider) Get(ctx context.Context, login string) (*models.User, err
 	}
 
 	return &models.User{
+		Id:       fmt.Sprintf("%d", user.Id),
 		Email:    user.Email.String,
 		Login:    user.Login.String,
 		Password: user.Password.String,

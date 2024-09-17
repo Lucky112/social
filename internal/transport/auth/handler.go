@@ -127,7 +127,7 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	}
 
 	payload := jwt.MapClaims{
-		"sub": user.Email,
+		"sub": user.Id,
 		"exp": time.Now().Add(time.Hour * 72).Unix(),
 	}
 

@@ -31,6 +31,15 @@ func (h *ProfilesHandler) CreateProfile(c *fiber.Ctx) error {
 		return nil
 	}
 
+	userId, ok := c.Context().Value("user").(string)
+	if !ok {
+		c.Status(fiber.StatusBadRequest).JSON(
+			profileError{fmt.Sprintf("failed to extract user id: %v", err)},
+		)
+		return nil
+	}
+	payload.userId = userId
+
 	p, err := payload.toModel()
 	if err != nil {
 		c.Status(fiber.StatusBadRequest).JSON(

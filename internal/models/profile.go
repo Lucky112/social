@@ -8,6 +8,7 @@ import (
 
 type Profile struct {
 	id      string
+	UserId  string
 	Name    string
 	Surname string
 	Sex     sex.Sex

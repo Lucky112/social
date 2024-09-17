@@ -95,12 +95,13 @@ func (p ProfilesProvider) Get(ctx context.Context, profileID int64) (*models.Pro
 
 func (p ProfilesProvider) Add(ctx context.Context, profile *models.Profile) (string, error) {
 	query := `
-		insert into scl.profiles(name, surname, age, sex)
-		values (@name, @surname, @age, @sex)
+		insert into scl.profiles(user_id, name, surname, age, sex)
+		values (@user, @name, @surname, @age, @sex)
 		returning id
 	`
 
 	args := pgx.NamedArgs{
+		"user":    profile.UserId,
 		"name":    profile.Name,
 		"surname": profile.Surname,
 		"age":     profile.Age,

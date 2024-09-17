@@ -8,6 +8,7 @@ import (
 )
 
 type profile struct {
+	userId  string
 	Name    string   `json:"name"`
 	Surname string   `json:"surname"`
 	Sex     string   `json:"sex"`
@@ -37,6 +38,7 @@ func (p *profile) toModel() (*models.Profile, error) {
 	}
 
 	return &models.Profile{
+		UserId:  p.userId,
 		Name:    p.Name,
 		Surname: p.Surname,
 		Sex:     sex,
