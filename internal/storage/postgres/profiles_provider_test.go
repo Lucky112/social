@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/Lucky112/social/internal/models"
@@ -21,7 +22,7 @@ func TestAllProfiles(t *testing.T) {
 	p := ProfilesProvider{mock}
 
 	t.Run("Select successfully", func(t *testing.T) {
-		expected := []models.Profile{
+		expected := []*models.Profile{
 			{
 				Name:    "user1",
 				Surname: "surname1",
@@ -123,7 +124,7 @@ func TestSingleProfile(t *testing.T) {
 		mock.ExpectQuery("select").WithArgs(profileId).WillReturnRows(profile)
 		mock.ExpectQuery("select").WithArgs(profileId).WillReturnRows(hobbies)
 
-		actual, err := p.Get(context.Background(), 0)
+		actual, err := p.Get(context.Background(), fmt.Sprintf("%d", profileId))
 		require.NoError(t, err)
 		require.Equal(t, expected, *actual)
 	})
@@ -134,7 +135,7 @@ func TestSingleProfile(t *testing.T) {
 		id := int64(1)
 		mock.ExpectQuery("select").WithArgs(id).WillReturnRows(rows)
 
-		actual, err := p.Get(context.Background(), id)
+		actual, err := p.Get(context.Background(), fmt.Sprintf("%d", id))
 		require.Error(t, err)
 		require.Nil(t, actual)
 	})
@@ -143,7 +144,7 @@ func TestSingleProfile(t *testing.T) {
 		id := int64(1)
 		mock.ExpectQuery("select").WithArgs(id).WillReturnError(errors.New("db error"))
 
-		actual, err := p.Get(context.Background(), id)
+		actual, err := p.Get(context.Background(), fmt.Sprintf("%d", id))
 		require.Error(t, err)
 		require.Nil(t, actual)
 	})

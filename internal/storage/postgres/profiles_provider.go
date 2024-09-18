@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/Lucky112/social/internal/models"
 	"github.com/Lucky112/social/internal/models/sex"
@@ -14,9 +15,13 @@ type ProfilesProvider struct {
 	querier pgxscan.Querier
 }
 
+func NewProfilesProvider(querier pgxscan.Querier) ProfilesProvider {
+	return ProfilesProvider{querier}
+}
+
 // TODO : add pagination
-func (p ProfilesProvider) GetAll(ctx context.Context) ([]models.Profile, error) {
-	var res []models.Profile
+func (p ProfilesProvider) GetAll(ctx context.Context) ([]*models.Profile, error) {
+	var res []*models.Profile
 
 	profilesInfo, err := p.getAllProfileInfo(ctx)
 	if err != nil {
@@ -51,21 +56,26 @@ func (p ProfilesProvider) GetAll(ctx context.Context) ([]models.Profile, error) 
 			})
 		}
 
-		res = append(res, profile)
+		res = append(res, &profile)
 	}
 
 	return res, nil
 }
 
-func (p ProfilesProvider) Get(ctx context.Context, profileID int64) (*models.Profile, error) {
-	profileInfo, err := p.getProfileInfo(ctx, profileID)
+func (p ProfilesProvider) Get(ctx context.Context, profileID string) (*models.Profile, error) {
+	id, err := strconv.ParseInt(profileID, 10, 0)
 	if err != nil {
-		return nil, fmt.Errorf("getting profile info of '%d': %v", profileID, err)
+		return nil, fmt.Errorf("illegal id '%s': %v : int64 expected", profileID, err)
 	}
 
-	hobbies, err := p.getHobbies(ctx, profileID)
+	profileInfo, err := p.getProfileInfo(ctx, id)
 	if err != nil {
-		return nil, fmt.Errorf("getting hobbies of '%d': %v", profileID, err)
+		return nil, fmt.Errorf("getting profile info of '%d': %v", id, err)
+	}
+
+	hobbies, err := p.getHobbies(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("getting hobbies of '%d': %v", id, err)
 	}
 
 	sex, err := sex.FromString(profileInfo.Sex.String)

@@ -10,12 +10,12 @@ import (
 
 // Обработчик HTTP-запросов на создание и просмотр анкет
 type ProfilesHandler struct {
-	storage ProfilesStorage
+	service ProfilesService
 }
 
-func NewProfilesHandler(storage ProfilesStorage) ProfilesHandler {
+func NewProfilesHandler(service ProfilesService) ProfilesHandler {
 	return ProfilesHandler{
-		storage: storage,
+		service: service,
 	}
 }
 
@@ -48,7 +48,7 @@ func (h *ProfilesHandler) CreateProfile(c *fiber.Ctx) error {
 		return nil
 	}
 
-	id, err := h.storage.Add(c.Context(), p)
+	id, err := h.service.Add(c.Context(), p)
 	if err != nil {
 		c.Status(fiber.StatusInternalServerError).JSON(
 			profileError{fmt.Sprintf("failed to save profile: %v", err)},
@@ -68,7 +68,7 @@ func (h *ProfilesHandler) CreateProfile(c *fiber.Ctx) error {
 func (h *ProfilesHandler) GetProfile(c *fiber.Ctx) error {
 	id := c.Params("id")
 
-	p, err := h.storage.Get(c.Context(), id)
+	p, err := h.service.Get(c.Context(), id)
 	if err != nil {
 		if errors.Is(err, models.ProfileNotFound) {
 			c.Status(fiber.StatusNotFound).JSON(
@@ -95,7 +95,7 @@ func (h *ProfilesHandler) GetProfile(c *fiber.Ctx) error {
 
 // Обработчик HTTP-запросов на список анкет
 func (h *ProfilesHandler) GetProfiles(c *fiber.Ctx) error {
-	profiles, err := h.storage.GetAll(c.Context())
+	profiles, err := h.service.GetAll(c.Context())
 	if err != nil {
 		c.Status(fiber.StatusInternalServerError).JSON(
 			profileError{fmt.Sprintf("failed to get all profiles: %v", err)},
