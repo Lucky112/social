@@ -8,25 +8,20 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
-	"golang.org/x/crypto/bcrypt"
 
 	"github.com/Lucky112/social/internal/models"
 )
 
 // Обработчик HTTP-запросов на регистрацию и аутентификацию пользователей
 type AuthHandler struct {
-	storage  AuthStorage
+	service  AuthService
 	signKey  []byte
 	validate *validator.Validate
 }
 
-var (
-	errBadCredentials = errors.New("email or password is incorrect")
-)
-
-func NewAuthHandler(storage AuthStorage, signKey string) AuthHandler {
+func NewAuthHandler(service AuthService, signKey string) AuthHandler {
 	return AuthHandler{
-		storage:  storage,
+		service:  service,
 		signKey:  []byte(signKey),
 		validate: validator.New(validator.WithRequiredStructEnabled()),
 	}
@@ -51,39 +46,24 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 		return nil
 	}
 
-	hashedPassword, err := hashAndSalt([]byte(regReq.Password))
-	if err != nil {
-		c.Status(fiber.StatusBadRequest).JSON(
-			registerError{fmt.Sprintf("invalid password: %v", err)},
-		)
-		return nil
-	}
-
 	user := &models.User{
 		Email:    regReq.Email,
 		Login:    regReq.Login,
-		Password: hashedPassword,
+		Password: regReq.Password,
 	}
 
-	exists, err := h.storage.Exists(c.Context(), user)
+	id, err := h.service.NewUser(c.Context(), user)
 	if err != nil {
-		c.Status(fiber.StatusInternalServerError).JSON(
-			registerError{fmt.Sprintf("failed to check user existence: %v", err)},
-		)
-		return nil
-	}
-	if exists {
-		c.Status(fiber.StatusBadRequest).JSON(
-			registerError{"the user for given email or login already exists"},
-		)
-		return nil
-	}
+		if errors.Is(err, models.UserAlreadyExists) {
+			c.Status(fiber.StatusBadRequest).JSON(
+				registerError{"the user for given email or login already exists"},
+			)
+		} else {
+			c.Status(fiber.StatusInternalServerError).JSON(
+				registerError{fmt.Sprintf("failed to create new user: %v", err)},
+			)
+		}
 
-	id, err := h.storage.Add(c.Context(), user)
-	if err != nil {
-		c.Status(fiber.StatusInternalServerError).JSON(
-			registerError{fmt.Sprintf("failed to create user: %v", err)},
-		)
 		return nil
 	}
 
@@ -113,31 +93,28 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 		return nil
 	}
 
-	user, err := h.storage.Get(c.Context(), loginReq.Login)
+	userId, err := h.service.Login(c.Context(), loginReq.Login, loginReq.Password)
 	if err != nil {
-		if errors.Is(err, models.UserNotFound) {
+		switch {
+		case errors.Is(err, models.UserNotFound):
 			c.Status(fiber.StatusNotFound).JSON(
-				loginError{err.Error()},
+				loginError{"the user for given login not found"},
 			)
-			return nil
+		case errors.Is(err, models.UserBadCredentials):
+			c.Status(fiber.StatusBadRequest).JSON(
+				loginError{"login or password is incorrect"},
+			)
+		default:
+			c.Status(fiber.StatusInternalServerError).JSON(
+				loginError{fmt.Sprintf("failed to login: %v", err)},
+			)
 		}
 
-		c.Status(fiber.StatusInternalServerError).JSON(
-			loginError{fmt.Sprintf("failed to find user: %v", err)},
-		)
-		return nil
-	}
-
-	err = checkHash([]byte(loginReq.Password), user.Password)
-	if err != nil {
-		c.Status(fiber.StatusBadRequest).JSON(
-			loginError{errBadCredentials.Error()},
-		)
 		return nil
 	}
 
 	payload := jwt.MapClaims{
-		"sub": user.Id,
+		"sub": userId,
 		"exp": time.Now().Add(time.Hour * 72).Unix(),
 	}
 
@@ -154,24 +131,6 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	err = c.JSON(loginResponse{AccessToken: t})
 	if err != nil {
 		return fmt.Errorf("sending response: %v", err)
-	}
-
-	return nil
-}
-
-func hashAndSalt(password []byte) ([]byte, error) {
-	hash, err := bcrypt.GenerateFromPassword(password, 14)
-	if err != nil {
-		return nil, fmt.Errorf("hashing password: %v", err)
-	}
-
-	return hash, nil
-}
-
-func checkHash(pwd, hashedPwd []byte) error {
-	err := bcrypt.CompareHashAndPassword(hashedPwd, pwd)
-	if err != nil {
-		return fmt.Errorf("comparing passwords: %v", err)
 	}
 
 	return nil

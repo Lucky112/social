@@ -13,6 +13,10 @@ type UsersProvider struct {
 	querier pgxscan.Querier
 }
 
+func NewUsersProvider(querier pgxscan.Querier) UsersProvider {
+	return UsersProvider{querier}
+}
+
 func (p UsersProvider) Exists(ctx context.Context, user *models.User) (bool, error) {
 	emailExists, err := p.checkEmailExists(ctx, user.Email)
 	if err != nil {
@@ -40,10 +44,10 @@ func (p UsersProvider) Get(ctx context.Context, login string) (*models.User, err
 	}
 
 	return &models.User{
-		Id:       fmt.Sprintf("%d", user.Id),
-		Email:    user.Email,
-		Login:    user.Login,
-		Password: user.Password,
+		Id:             fmt.Sprintf("%d", user.Id),
+		Email:          user.Email,
+		Login:          user.Login,
+		HashedPassword: user.Password,
 	}, nil
 }
 
@@ -57,7 +61,7 @@ func (p UsersProvider) Add(ctx context.Context, user *models.User) (string, erro
 	args := pgx.NamedArgs{
 		"email":    user.Email,
 		"login":    user.Login,
-		"password": user.Password,
+		"password": user.HashedPassword,
 	}
 
 	rows, err := p.querier.Query(ctx, query, args)

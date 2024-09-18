@@ -15,20 +15,19 @@ import (
 )
 
 func TestAuth(t *testing.T) {
-	storage := mocks.NewAuthStorage(t)
-	authHandler := NewAuthHandler(storage, "encription-key")
+	service := mocks.NewAuthService(t)
+	authHandler := NewAuthHandler(service, "encription-key")
 
 	app := fiber.New()
 	app.Post("/register", authHandler.Register)
 	app.Post("/login", authHandler.Login)
 
 	t.Run("test Register", func(t *testing.T) {
-		storage.On("Exists", mock.Anything, mock.Anything).Return(false, nil).Once()
-		storage.On("Add", mock.Anything, mock.Anything).Return("1", nil).Once()
+		service.On("NewUser", mock.Anything, mock.Anything).Return("1", nil).Once()
 
 		body := strings.NewReader(`{
 			"email": "any string",
-			"name": "any string",
+			"login": "any string",
 			"password": "any string"
 		}`)
 
@@ -41,11 +40,11 @@ func TestAuth(t *testing.T) {
 	})
 
 	t.Run("test Register again", func(t *testing.T) {
-		storage.On("Exists", mock.Anything, mock.Anything).Return(true, nil).Once()
+		service.On("NewUser", mock.Anything, mock.Anything).Return("", fmt.Errorf("%w", models.UserAlreadyExists)).Once()
 
 		body := strings.NewReader(`{
 			"email": "any string",
-			"name": "any string",
+			"login": "any string",
 			"password": "any string"
 		}`)
 
@@ -80,14 +79,7 @@ func TestAuth(t *testing.T) {
 	})
 
 	t.Run("test Login successfully", func(t *testing.T) {
-		hashedPwd, _ := hashAndSalt([]byte("password"))
-		user := &models.User{
-			Email:    "email",
-			Login:    "name",
-			Password: hashedPwd,
-		}
-
-		storage.On("Get", mock.Anything, "login").Return(user, nil).Once()
+		service.On("Login", mock.Anything, "login", "password").Return("3", nil).Once()
 
 		body := strings.NewReader(`{
 			"email": "email",
@@ -104,14 +96,7 @@ func TestAuth(t *testing.T) {
 	})
 
 	t.Run("test Login with wrong password", func(t *testing.T) {
-		hashedPwd, _ := hashAndSalt([]byte("password"))
-		user := &models.User{
-			Email:    "email",
-			Login:    "name",
-			Password: hashedPwd,
-		}
-
-		storage.On("Get", mock.Anything, "login").Return(user, nil).Once()
+		service.On("Login", mock.Anything, "login", "wrong password").Return("", fmt.Errorf("%w", models.UserBadCredentials)).Once()
 
 		body := strings.NewReader(`{
 			"email": "email",
@@ -128,7 +113,7 @@ func TestAuth(t *testing.T) {
 	})
 
 	t.Run("test Login with unknown login", func(t *testing.T) {
-		storage.On("Get", mock.Anything, "unknown login").Return(nil, fmt.Errorf("%w", models.UserNotFound)).Once()
+		service.On("Login", mock.Anything, "unknown login", "password").Return("", fmt.Errorf("%w", models.UserNotFound)).Once()
 
 		body := strings.NewReader(`{
 			"email": "email",
