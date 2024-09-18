@@ -3,7 +3,7 @@ package transport
 import (
 	"fmt"
 
-	"github.com/Lucky112/social/internal/storage/inmemory"
+	"github.com/Lucky112/social/config"
 	"github.com/Lucky112/social/internal/transport/auth"
 	"github.com/Lucky112/social/internal/transport/profiles"
 	jwtware "github.com/gofiber/contrib/jwt"
@@ -13,16 +13,14 @@ import (
 
 type Server struct {
 	server *fiber.App
+	port   uint16
 }
 
 const signKey = "encription-key"
 
-func NewServer() Server {
-	authStorage := inmemory.NewAuthStorage()
-	authHandler := auth.NewAuthHandler(authStorage, signKey)
-
-	profileStorage := inmemory.NewProfileStorage()
-	profilesHandler := profiles.NewProfilesHandler(profileStorage)
+func NewServer(cfg config.ServerConfig, authService auth.AuthService, profilesService profiles.ProfilesService) Server {
+	authHandler := auth.NewAuthHandler(authService, signKey)
+	profilesHandler := profiles.NewProfilesHandler(profilesService)
 
 	server := fiber.New()
 
@@ -45,11 +43,12 @@ func NewServer() Server {
 
 	return Server{
 		server: server,
+		port:   cfg.Port,
 	}
 }
 
-func (s Server) Start(port int16) error {
-	address := fmt.Sprintf(":%d", port)
+func (s Server) Start() error {
+	address := fmt.Sprintf(":%d", s.port)
 
 	err := s.server.Listen(address)
 	return err
