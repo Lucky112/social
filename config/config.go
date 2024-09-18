@@ -25,7 +25,8 @@ type DBConfig struct {
 }
 
 type ServerConfig struct {
-	Port uint16 `json:"port" yaml:"port" validate:"required,min=1,max=65535"`
+	Port   uint16 `json:"port" yaml:"port" validate:"required,min=1,max=65535"`
+	JWTKey string `json:"jwt_key" yaml:"jwt_key" validate:"required"`
 }
 
 func Load(filename string) (*Config, error) {

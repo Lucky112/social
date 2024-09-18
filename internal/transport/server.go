@@ -3,12 +3,13 @@ package transport
 import (
 	"fmt"
 
-	"github.com/Lucky112/social/config"
-	"github.com/Lucky112/social/internal/transport/auth"
-	"github.com/Lucky112/social/internal/transport/profiles"
-	jwtware "github.com/gofiber/contrib/jwt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/recover"
+
+	"github.com/Lucky112/social/config"
+	"github.com/Lucky112/social/internal/transport/auth"
+	"github.com/Lucky112/social/internal/transport/jwt"
+	"github.com/Lucky112/social/internal/transport/profiles"
 )
 
 type Server struct {
@@ -16,10 +17,10 @@ type Server struct {
 	port   uint16
 }
 
-const signKey = "encription-key"
-
 func NewServer(cfg *config.ServerConfig, authService auth.AuthService, profilesService profiles.ProfilesService) Server {
-	authHandler := auth.NewAuthHandler(authService, signKey)
+	jwtKey := []byte(cfg.JWTKey)
+
+	authHandler := auth.NewAuthHandler(authService, jwtKey)
 	profilesHandler := profiles.NewProfilesHandler(profilesService)
 
 	server := fiber.New()
@@ -31,11 +32,7 @@ func NewServer(cfg *config.ServerConfig, authService auth.AuthService, profilesS
 	publicGroup.Post("/login", authHandler.Login)
 
 	authorizedGroup := server.Group("")
-	authorizedGroup.Use(jwtware.New(jwtware.Config{
-		SigningKey: jwtware.SigningKey{
-			Key: []byte(signKey),
-		},
-	}))
+	authorizedGroup.Use(jwt.Middleware(jwtKey))
 
 	authorizedGroup.Post("/profiles", profilesHandler.CreateProfile)
 	authorizedGroup.Get("/profiles", profilesHandler.GetProfiles)

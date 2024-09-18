@@ -7,3 +7,4 @@ db_config:
 
 server_config:
   port: 15000
+  jwt_key: "secret key"

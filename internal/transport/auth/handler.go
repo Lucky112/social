@@ -3,26 +3,25 @@ package auth
 import (
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/Lucky112/social/internal/models"
+	"github.com/Lucky112/social/internal/transport/jwt"
 )
 
 // Обработчик HTTP-запросов на регистрацию и аутентификацию пользователей
 type AuthHandler struct {
 	service  AuthService
-	signKey  []byte
+	jwtKey   []byte
 	validate *validator.Validate
 }
 
-func NewAuthHandler(service AuthService, signKey string) AuthHandler {
+func NewAuthHandler(service AuthService, jwtKey []byte) AuthHandler {
 	return AuthHandler{
 		service:  service,
-		signKey:  []byte(signKey),
+		jwtKey:   jwtKey,
 		validate: validator.New(validator.WithRequiredStructEnabled()),
 	}
 }
@@ -67,9 +66,12 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 		return nil
 	}
 
-	c.Status(fiber.StatusCreated).JSON(
+	err = c.Status(fiber.StatusCreated).JSON(
 		registerResponse{id},
 	)
+	if err != nil {
+		return fmt.Errorf("sending response: %v", err)
+	}
 
 	return nil
 }
@@ -113,22 +115,15 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 		return nil
 	}
 
-	payload := jwt.MapClaims{
-		"sub": userId,
-		"exp": time.Now().Add(time.Hour * 72).Unix(),
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)
-
-	t, err := token.SignedString(h.signKey)
+	token, err := jwt.MakeToken(userId, h.jwtKey)
 	if err != nil {
 		c.Status(fiber.StatusInternalServerError).JSON(
-			loginError{err.Error()},
+			loginError{fmt.Sprintf("failed to create JWT-token: %v", err)},
 		)
 		return nil
 	}
 
-	err = c.JSON(loginResponse{AccessToken: t})
+	err = c.JSON(loginResponse{AccessToken: token})
 	if err != nil {
 		return fmt.Errorf("sending response: %v", err)
 	}

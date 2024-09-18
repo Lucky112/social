@@ -16,7 +16,7 @@ import (
 
 func TestAuth(t *testing.T) {
 	service := mocks.NewAuthService(t)
-	authHandler := NewAuthHandler(service, "encription-key")
+	authHandler := NewAuthHandler(service, []byte("encription-key"))
 
 	app := fiber.New()
 	app.Post("/register", authHandler.Register)
