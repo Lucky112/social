@@ -5,24 +5,28 @@ import (
 	"fmt"
 
 	"github.com/Lucky112/social/internal/models"
+	"github.com/Lucky112/social/internal/transport/jwt"
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 )
 
 // Обработчик HTTP-запросов на создание и просмотр анкет
 type ProfilesHandler struct {
-	service ProfilesService
+	service  ProfilesService
+	validate *validator.Validate
 }
 
 func NewProfilesHandler(service ProfilesService) ProfilesHandler {
 	return ProfilesHandler{
-		service: service,
+		service:  service,
+		validate: validator.New(validator.WithRequiredStructEnabled()),
 	}
 }
 
 // Обработчик HTTP-запросов на создание анкеты
 func (h *ProfilesHandler) CreateProfile(c *fiber.Ctx) error {
 	var payload profile
-	fmt.Println(string(c.Body()))
+
 	err := c.BodyParser(&payload)
 	if err != nil {
 		c.Status(fiber.StatusBadRequest).JSON(
@@ -31,8 +35,16 @@ func (h *ProfilesHandler) CreateProfile(c *fiber.Ctx) error {
 		return nil
 	}
 
-	userId, ok := c.Context().Value("user").(string)
-	if !ok {
+	err = h.validate.Struct(payload)
+	if err != nil {
+		c.Status(fiber.StatusBadRequest).JSON(
+			profileError{fmt.Sprintf("invalid body: %v", err)},
+		)
+		return nil
+	}
+
+	userId, err := jwt.ExtractUserId(c)
+	if err != nil {
 		c.Status(fiber.StatusBadRequest).JSON(
 			profileError{fmt.Sprintf("failed to extract user id: %v", err)},
 		)
@@ -56,7 +68,9 @@ func (h *ProfilesHandler) CreateProfile(c *fiber.Ctx) error {
 		return nil
 	}
 
-	err = c.JSON(profileResponse{id})
+	err = c.Status(fiber.StatusCreated).JSON(
+		profileResponse{id},
+	)
 	if err != nil {
 		return fmt.Errorf("sending response: %v", err)
 	}
