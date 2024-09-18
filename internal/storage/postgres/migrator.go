@@ -3,6 +3,7 @@ package postgres
 import (
 	"database/sql"
 	"embed"
+	"errors"
 	"fmt"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -13,7 +14,7 @@ import (
 //go:embed migrations/*.sql
 var fs embed.FS
 
-func applyMigrations(db *sql.DB) error {
+func ApplyMigrations(db *sql.DB) error {
 	driver, err := pgx.WithInstance(db, &pgx.Config{})
 	if err != nil {
 		return fmt.Errorf("creating migrator db client: %v", err)
@@ -31,13 +32,18 @@ func applyMigrations(db *sql.DB) error {
 
 	err = m.Up()
 	if err != nil {
+		if errors.Is(err, migrate.ErrNoChange) {
+			// it's ok - already migrated
+			return nil
+		}
+
 		return fmt.Errorf("migrating up: %v", err)
 	}
 
 	return nil
 }
 
-func rollbackMigrations(db *sql.DB) error {
+func RollbackMigrations(db *sql.DB) error {
 	driver, err := pgx.WithInstance(db, &pgx.Config{})
 	if err != nil {
 		return fmt.Errorf("creating migrator db client: %v", err)

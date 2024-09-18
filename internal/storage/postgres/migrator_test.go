@@ -90,12 +90,12 @@ func TestMain(m *testing.M) {
 }
 
 func TestMigrations(t *testing.T) {
-	err := applyMigrations(db)
+	err := ApplyMigrations(db)
 	require.NoError(t, err)
 
-	err = rollbackMigrations(db)
+	err = RollbackMigrations(db)
 	require.NoError(t, err)
 
-	err = applyMigrations(db)
+	err = ApplyMigrations(db)
 	require.NoError(t, err)
 }
