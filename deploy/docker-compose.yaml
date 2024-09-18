@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: postgres:16.3
+    container_name: my_postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: pwd
+      POSTGRES_DB: demoDB
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "15432:5432"
+    networks:
+      - app_network
+
+  app:
+    build:
+      context: ..
+      dockerfile: ./deploy/Dockerfile
+    container_name: social
+    depends_on:
+      - postgres
+    environment:
+      CONFIG_PATH: /app/config.yaml
+    volumes:
+      - ./config.yaml:/app/config.yaml
+    ports:
+      - "15000:15000"
+    networks:
+      - app_network
+
+networks:
+  app_network:
+
+volumes:
+  pgdata:

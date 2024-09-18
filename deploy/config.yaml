@@ -1,0 +1,9 @@
+db_config:
+  host: "postgres"
+  port: 5432
+  user: "admin"
+  password: "pwd"
+  database: "demoDB"
+
+server_config:
+  port: 15000
