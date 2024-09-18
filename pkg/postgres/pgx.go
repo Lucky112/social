@@ -12,7 +12,7 @@ type Pool struct {
 	pool *pgxpool.Pool
 }
 
-func ViaPGX(ctx context.Context, cfg Config) (Pool, error) {
+func ViaPGX(ctx context.Context, cfg *Config) (Pool, error) {
 	pool, err := pgxpool.New(ctx, cfg.connectionURL())
 	if err != nil {
 		return Pool{}, fmt.Errorf("creating new pgx pool: %v", err)

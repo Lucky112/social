@@ -18,7 +18,7 @@ type Server struct {
 
 const signKey = "encription-key"
 
-func NewServer(cfg config.ServerConfig, authService auth.AuthService, profilesService profiles.ProfilesService) Server {
+func NewServer(cfg *config.ServerConfig, authService auth.AuthService, profilesService profiles.ProfilesService) Server {
 	authHandler := auth.NewAuthHandler(authService, signKey)
 	profilesHandler := profiles.NewProfilesHandler(profilesService)
 

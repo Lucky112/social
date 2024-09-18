@@ -13,7 +13,7 @@ type Service struct {
 	db postgres.Pool
 }
 
-func NewService(ctx context.Context, config config.DBConfig) (Service, error) {
+func NewService(ctx context.Context, config *config.DBConfig) (Service, error) {
 	cfg := toPostgresConfig(config)
 
 	db, err := postgres.ViaPGX(ctx, cfg)
@@ -36,8 +36,8 @@ func (s Service) ProfilesService() ProfilesService {
 	return NewProfilesService(storage)
 }
 
-func toPostgresConfig(cfg config.DBConfig) postgres.Config {
-	return postgres.Config{
+func toPostgresConfig(cfg *config.DBConfig) *postgres.Config {
+	return &postgres.Config{
 		User:     cfg.User,
 		Password: cfg.Password,
 		Database: cfg.Database,

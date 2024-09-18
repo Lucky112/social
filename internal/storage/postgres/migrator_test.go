@@ -66,7 +66,7 @@ func TestMain(m *testing.M) {
 		Port:     uint16(port),
 	}
 
-	db, err = postgres.ViaSTD(config)
+	db, err = postgres.ViaSTD(&config)
 	if err != nil {
 		log.Fatalf("Could not connect to db: %s", err)
 	}

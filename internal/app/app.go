@@ -8,9 +8,7 @@ import (
 	"github.com/Lucky112/social/internal/transport"
 )
 
-func Run() {
-	config := config.Config{}
-
+func Run(config *config.Config) {
 	service, err := service.NewService(context.Background(), config.DBConfig)
 	if err != nil {
 		panic(err)
