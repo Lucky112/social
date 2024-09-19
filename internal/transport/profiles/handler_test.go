@@ -36,7 +36,7 @@ func TestProfiles(t *testing.T) {
 			"name": "Alfred",
 			"surname": "Winner",
 			"sex": "male",
-			"age": 34,
+			"birthdate": "1989-06-23",
 			"hobbies": "cycling, reading, chess, parties",
 			"address": "Moscow"
 		}`)
@@ -62,7 +62,7 @@ func TestProfiles(t *testing.T) {
 			"name": "Alfred",
 			"surname": "Winner",
 			"sex": "male",
-			"age": 34,
+			"birthdate": "1989-06-23",
 			"hobbies": "cycling, reading, chess, parties",
 			"address": "Moscow"
 		}`)
@@ -86,7 +86,7 @@ func TestProfiles(t *testing.T) {
 			"name": "Alfred",
 			"surname": "Winner",
 			"sex": "malformed sex",
-			"age": 34,
+			"birthdate": "1989-06-23",
 			"hobbies": "cycling, reading, chess, parties",
 			"address": "Moscow"
 		}`)

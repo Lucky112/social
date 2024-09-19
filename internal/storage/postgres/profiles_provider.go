@@ -60,19 +60,19 @@ func (p ProfilesProvider) Get(ctx context.Context, profileID string) (*models.Pr
 
 func (p ProfilesProvider) Add(ctx context.Context, profile *models.Profile) (string, error) {
 	query := `
-		insert into scl.profiles(user_id, name, surname, age, sex, address, hobbies)
-		values (@user, @name, @surname, @age, @sex, @address, @hobbies)
+		insert into scl.profiles(user_id, name, surname, birthdate, sex, address, hobbies)
+		values (@user, @name, @surname, @birthdate, @sex, @address, @hobbies)
 		returning id
 	`
 
 	args := pgx.NamedArgs{
-		"user":    profile.UserId,
-		"name":    profile.Name,
-		"surname": profile.Surname,
-		"age":     profile.Age,
-		"sex":     profile.Sex.String(),
-		"address": profile.Address,
-		"hobbies": profile.Hobbies,
+		"user":      profile.UserId,
+		"name":      profile.Name,
+		"surname":   profile.Surname,
+		"birthdate": profile.Birthdate,
+		"sex":       profile.Sex.String(),
+		"address":   profile.Address,
+		"hobbies":   profile.Hobbies,
 	}
 
 	rows, err := p.querier.Query(ctx, query, args)
@@ -104,7 +104,7 @@ func (p ProfilesProvider) getProfileInfo(ctx context.Context, profileID int64) (
 			ps.id,
 			name,
 			surname,
-			age,
+			birthdate,
 			sex,
 			address,
 			hobbies
@@ -132,7 +132,7 @@ func (p ProfilesProvider) getAllProfileInfo(ctx context.Context) ([]profile, err
 			ps.id,
 			name,
 			surname,
-			age,
+			birthdate,
 			sex,
 			address,
 			hobbies

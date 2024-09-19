@@ -12,7 +12,7 @@ create table scl.profiles (
     user_id varchar(50) NOT NULL,
     name varchar(100),
     surname varchar(100),
-    age smallint,
+    birthdate date,
     sex varchar(20),
     address varchar,
     hobbies varchar
