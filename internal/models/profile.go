@@ -13,17 +13,8 @@ type Profile struct {
 	Surname string
 	Sex     sex.Sex
 	Age     uint8
-	Address Address
-	Hobbies []Hobby
-}
-
-type Address struct {
-	Country string
-	City    string
-}
-
-type Hobby struct {
-	Title string
+	Address string
+	Hobbies string
 }
 
 var ProfileNotFound = errors.New("profile not found")

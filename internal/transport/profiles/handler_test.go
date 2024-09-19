@@ -37,8 +37,8 @@ func TestProfiles(t *testing.T) {
 			"surname": "Winner",
 			"sex": "male",
 			"age": 34,
-			"hobbies": ["cycling", "reading", "chess", "parties"],
-			"city": "Moscow"
+			"hobbies": "cycling, reading, chess, parties",
+			"address": "Moscow"
 		}`)
 
 		token, err := jwt.MakeToken(userId, signingKey)
@@ -63,8 +63,8 @@ func TestProfiles(t *testing.T) {
 			"surname": "Winner",
 			"sex": "male",
 			"age": 34,
-			"hobbies": ["cycling", "reading", "chess", "parties"],
-			"city": "Moscow"
+			"hobbies": "cycling, reading, chess, parties",
+			"address": "Moscow"
 		}`)
 
 		token, err := jwt.MakeToken(userId, signingKey)
@@ -87,8 +87,8 @@ func TestProfiles(t *testing.T) {
 			"surname": "Winner",
 			"sex": "malformed sex",
 			"age": 34,
-			"hobbies": ["cycling", "reading", "chess", "parties"],
-			"city": "Moscow"
+			"hobbies": "cycling, reading, chess, parties",
+			"address": "Moscow"
 		}`)
 
 		token, err := jwt.MakeToken(userId, signingKey)

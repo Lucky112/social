@@ -14,22 +14,8 @@ create table scl.profiles (
     surname varchar(100),
     age smallint,
     sex varchar(20),
-    address_id bigint
+    address varchar,
+    hobbies varchar
 );
 
-create table scl.hobbies (
-    id bigserial PRIMARY KEY,
-    title varchar(200)
-);
-
-create table scl.profile_hobbies (
-    profile_id bigint,
-    hobby_id bigint
-);
-
-create table scl.addresses (
-    id bigserial PRIMARY KEY,
-    city varchar(100),
-    country varchar(100)
-);
 
