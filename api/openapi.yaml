@@ -1,0 +1,230 @@
+openapi: 3.0.0
+info:
+  title: Social
+  version: 1.2.0
+paths:
+  /login:
+    post:
+      description: Упрощенный процесс аутентификации путем передачи идентификатор пользователя и получения токена для дальнейшего прохождения авторизации
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                login:
+                  $ref: '#/components/schemas/login'
+                password:
+                  type: string
+                  example: Секретная строка
+      responses:
+        '200':
+          description: Успешная аутентификация
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjcwMTE5ODIsInN1YiI6IjEifQ.6Tieg1XU0QeJphe_sRCO7YmYhohB3V95gkz33J4SCHo
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/5xx'
+        '503':
+          $ref: '#/components/responses/5xx'
+  /register:
+    post:
+      description: Регистрация нового пользователя
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  example: Электронный адрес
+                login:
+                  $ref: '#/components/schemas/login'
+                password:
+                  type: string
+                  example: Секретная строка
+      responses:
+        '200':
+          description: Пользователь успешно зарегестрирован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: string
+                    example: '1'
+        '400':
+          $ref: '#/components/responses/400'
+        '500':
+          $ref: '#/components/responses/5xx'
+        '503':
+          $ref: '#/components/responses/5xx'
+  /profiles:
+    post:
+      description: Создание новой анкеты пользователя
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                first_name:
+                  type: string
+                  example: Имя
+                second_name:
+                  type: string
+                  example: Фамилия
+                birthdate:
+                  $ref: '#/components/schemas/BirthDate'
+                hobbies:
+                  type: string
+                  example: Хобби, интересы и т.п.
+                city:
+                  type: string
+                  example: Москва
+      responses:
+        '200':
+          description: Анкета успешно создана
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  profile_id:
+                    type: string
+                    example: '1'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/5xx'
+        '503':
+          $ref: '#/components/responses/5xx'
+  /profiles/{id}:
+    get:
+      description: Получение анкеты пользователя
+      parameters:
+        - name: id
+          schema:
+            type: string
+            example: '1'
+          required: true
+          in: path
+          description: Идентификатор анкеты
+      responses:
+        '200':
+          description: Успешное получение анкеты
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/5xx'
+        '503':
+          $ref: '#/components/responses/5xx'
+components:
+  responses:
+    '400':
+      description: Невалидные данные ввода
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - msg
+            properties:
+              msg:
+                type: string
+                description: Описание ошибки
+    '401':
+      description: Неавторизованный доступ
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - msg
+            properties:
+              msg:
+                type: string
+                description: Описание ошибки
+    '404':
+      description: Не найдено
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - msg
+            properties:
+              msg:
+                type: string
+                description: Описание ошибки
+    5xx:
+      description: Ошибка сервера
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - msg
+            properties:
+              msg:
+                type: string
+                description: Описание ошибки
+  schemas:
+    BirthDate:
+      type: string
+      description: Дата рождения
+      format: date
+      example: '2017-02-01'
+    login:
+      type: string
+      example: login
+      description: Идентификатор пользователя
+    Profile:
+      type: object
+      properties:
+        first_name:
+          type: string
+          example: Имя
+          description: Имя
+        second_name:
+          type: string
+          example: Фамилия
+          description: Фамилия
+        birthdate:
+          $ref: '#/components/schemas/BirthDate'
+        biography:
+          type: string
+          example: Хобби, интересы и т.п.
+          description: Интересы
+        city:
+          type: string
+          example: Москва
+          description: Город
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Авторизация по токену, который был получен в методе /login
