@@ -4,8 +4,10 @@ services:
     container_name: my_postgres
     environment:
       POSTGRES_USER: admin
-      POSTGRES_PASSWORD: pwd
       POSTGRES_DB: demoDB
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
@@ -13,17 +15,37 @@ services:
     networks:
       - app_network
 
+  config-generator:
+    image: alpine:latest
+    volumes:
+      - app-config:/app/config
+      - ./config.yaml:/app/config.orig.yaml
+    secrets:
+      - db_password
+      - jwt_key
+    entrypoint: >
+      sh -c "
+      echo 'Generating YAML config from template...';
+      cp /app/config.orig.yaml /app/config/config.yaml;
+
+      apk add --no-cache yq;
+      yq eval '.db_config.password = strload(\"/run/secrets/db_password\") | .server_config.jwt_key = strload(\"/run/secrets/jwt_key\")' /app/config/config.yaml -i;
+      "
+
   app:
     build:
       context: ..
       dockerfile: ./deploy/Dockerfile
     container_name: social
     depends_on:
-      - postgres
+      config-generator:
+        condition: "service_completed_successfully"
+      postgres:
+        condition: "service_started"
     environment:
-      CONFIG_PATH: /app/config.yaml
+      CONFIG_PATH: /app/config/config.yaml
     volumes:
-      - ./config.yaml:/app/config.yaml
+      - app-config:/app/config
     ports:
       - "15000:15000"
     networks:
@@ -34,3 +56,10 @@ networks:
 
 volumes:
   pgdata:
+  app-config:
+
+secrets:
+  jwt_key:
+    file: ../secrets/jwt_key.txt
+  db_password:
+    file: ../secrets/db_password.txt

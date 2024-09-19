@@ -47,7 +47,7 @@ func Load(filename string) (*Config, error) {
 			return nil, fmt.Errorf("loading from yaml: %v", err)
 		}
 	default:
-		return nil, fmt.Errorf("unsupported file type: .json or .yaml expected")
+		return nil, fmt.Errorf("unsupported file type of '%s': .json or .yaml expected", filename)
 	}
 
 	err = validate(config)
