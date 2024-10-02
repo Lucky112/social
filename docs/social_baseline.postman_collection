@@ -1,0 +1,213 @@
+{
+	"info": {
+		"_postman_id": "03ca7310-f3cf-46a7-ab9e-50711e883762",
+		"name": "Social baseline",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "36795760"
+	},
+	"item": [
+		{
+			"name": "New user",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"let k = pm.collectionVariables.get(\"index\");\r",
+							"k ++ \r",
+							"pm.collectionVariables.set(\"index\", k);\r",
+							"\r",
+							"pm.collectionVariables.set(\"login\", \"User\" + k);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"login\": \"{{login}}\",\r\n    \"email\": \"{{login}}@index.com\",\r\n    \"password\": \"pwd\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:15000/register",
+					"host": [
+						"localhost"
+					],
+					"port": "15000",
+					"path": [
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"let response = pm.response.json();\r",
+							"pm.collectionVariables.set(\"jwt_token\", response.access_token);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"login\": \"{{login}}\",\r\n    \"password\": \"pwd\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:15000/login",
+					"host": [
+						"localhost"
+					],
+					"port": "15000",
+					"path": [
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "New Profile",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"let response = pm.response.json();\r",
+							"pm.collectionVariables.set(\"profile_id\", response.id);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"name\": \"Alfred\",\r\n    \"surname\": \"Winner\",\r\n    \"sex\": \"male\",\r\n    \"birthdate\": \"1989-06-23\",\r\n    \"hobbies\": \"cycling, reading, chess, parties\",\r\n    \"city\": \"Moscow\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:15000/profiles",
+					"host": [
+						"localhost"
+					],
+					"port": "15000",
+					"path": [
+						"profiles"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get profile",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:15000/profiles/{{profile_id}}",
+					"host": [
+						"localhost"
+					],
+					"port": "15000",
+					"path": [
+						"profiles",
+						"{{profile_id}}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "jwt_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "profile_id",
+			"value": ""
+		},
+		{
+			"key": "index",
+			"value": ""
+		},
+		{
+			"key": "login",
+			"value": ""
+		}
+	]
+}
