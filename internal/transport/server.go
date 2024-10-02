@@ -36,7 +36,8 @@ func NewServer(cfg *config.ServerConfig, authService auth.AuthService, profilesS
 
 	authorizedGroup.Post("/profiles", profilesHandler.CreateProfile)
 	authorizedGroup.Get("/profiles", profilesHandler.GetProfiles)
-	authorizedGroup.Get("/profiles/:id", profilesHandler.GetProfile)
+	authorizedGroup.Get("/profiles/search", profilesHandler.SearchProfile)
+	authorizedGroup.Get("/profiles/:id", profilesHandler.GetProfileById)
 
 	return Server{
 		server: server,

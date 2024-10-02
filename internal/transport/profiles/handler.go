@@ -79,7 +79,7 @@ func (h *ProfilesHandler) CreateProfile(c *fiber.Ctx) error {
 }
 
 // Обработчик HTTP-запросов на конкретную анкет
-func (h *ProfilesHandler) GetProfile(c *fiber.Ctx) error {
+func (h *ProfilesHandler) GetProfileById(c *fiber.Ctx) error {
 	id := c.Params("id")
 
 	p, err := h.service.Get(c.Context(), id)
@@ -104,6 +104,44 @@ func (h *ProfilesHandler) GetProfile(c *fiber.Ctx) error {
 		return fmt.Errorf("sending response: %v", err)
 	}
 
+	return nil
+}
+
+// Обработчик HTTP-запросов на поиск анкеты по параметрам
+func (h *ProfilesHandler) SearchProfile(c *fiber.Ctx) error {
+	name := c.Query("name")
+	surname := c.Query("surname")
+
+	params := &models.SearchParams{
+		NamePrefix:    name,
+		SurnamePrefix: surname,
+	}
+
+	profiles, err := h.service.Search(c.Context(), params)
+	if err != nil {
+		if errors.Is(err, models.ProfileNotFound) {
+			c.Status(fiber.StatusNotFound).JSON(
+				profileError{err.Error()},
+			)
+			return nil
+		}
+
+		c.Status(fiber.StatusInternalServerError).JSON(
+			profileError{fmt.Sprintf("failed to find profile: %v", err)},
+		)
+		return nil
+	}
+
+	payload := make([]*profile, len(profiles))
+
+	for i, p := range profiles {
+		payload[i] = fromModel(p)
+	}
+
+	err = c.JSON(payload)
+	if err != nil {
+		return fmt.Errorf("sending response: %v", err)
+	}
 	return nil
 }
 

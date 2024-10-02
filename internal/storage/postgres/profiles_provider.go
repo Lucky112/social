@@ -39,6 +39,26 @@ func (p ProfilesProvider) GetAll(ctx context.Context) ([]*models.Profile, error)
 	return res, nil
 }
 
+func (p ProfilesProvider) Search(ctx context.Context, params *models.SearchParams) ([]*models.Profile, error) {
+	var res []*models.Profile
+
+	profilesInfo, err := p.getProfilesInfoByParams(ctx, params)
+	if err != nil {
+		return nil, fmt.Errorf("getting all profiles info: %v", err)
+	}
+
+	for _, profileInfo := range profilesInfo {
+		profile, err := profileInfo.toModel()
+		if err != nil {
+			return nil, fmt.Errorf("converting profile info of '%d': %v", profileInfo.Id, err)
+		}
+
+		res = append(res, profile)
+	}
+
+	return res, nil
+}
+
 func (p ProfilesProvider) Get(ctx context.Context, profileID string) (*models.Profile, error) {
 	id, err := strconv.ParseInt(profileID, 10, 0)
 	if err != nil {
@@ -143,5 +163,43 @@ func (p ProfilesProvider) getAllProfileInfo(ctx context.Context) ([]profile, err
 	if err != nil {
 		return nil, fmt.Errorf("executing query `%s`: %v", query, err)
 	}
+	return profiles, nil
+}
+
+func (p ProfilesProvider) getProfilesInfoByParams(ctx context.Context, params *models.SearchParams) ([]profile, error) {
+	var profiles []profile
+
+	args := pgx.NamedArgs{
+		"name":    fmt.Sprintf("%s%%", params.NamePrefix),
+		"surname": fmt.Sprintf("%s%%", params.SurnamePrefix),
+	}
+
+	query := `
+		select
+			ps.id,
+			name,
+			surname,
+			birthdate,
+			sex,
+			address,
+			hobbies
+		from scl.profiles as ps
+		where
+			name LIKE @name
+			and
+			surname LIKE @surname
+		order by
+			ps.id
+	`
+
+	err := pgxscan.Select(ctx, p.querier, &profiles, query, args)
+	if err != nil {
+		return nil, fmt.Errorf("executing query `%s`: %v", query, err)
+	}
+
+	if len(profiles) == 0 {
+		return nil, fmt.Errorf("querying db: %v", models.ProfileNotFound)
+	}
+
 	return profiles, nil
 }

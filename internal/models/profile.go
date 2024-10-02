@@ -18,4 +18,9 @@ type Profile struct {
 	Hobbies   string
 }
 
+type SearchParams struct {
+	NamePrefix    string
+	SurnamePrefix string
+}
+
 var ProfileNotFound = errors.New("profile not found")
