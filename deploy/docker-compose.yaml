@@ -15,6 +15,22 @@ services:
     networks:
       - app_network
 
+  # data-generator:
+  #   build:
+  #     context: ./data_generator
+  #   depends_on:
+  #     - postgres
+  #   environment:
+  #     DB_HOST: postgres
+  #     DB_PORT: "5432"
+  #     DB_NAME: demoDB
+  #     DB_USER: admin
+  #     DB_PASSWORD_FILE: /run/secrets/db_password
+  #   secrets:
+  #     - db_password
+  #   networks:
+  #     - app_network
+
   config-generator:
     image: alpine:latest
     volumes:
@@ -25,11 +41,11 @@ services:
       - jwt_key
     entrypoint: >
       sh -c "
-      echo 'Generating YAML config from template...';
-      cp /app/config.orig.yaml /app/config/config.yaml;
+        echo 'Generating YAML config from template...';
+        cp /app/config.orig.yaml /app/config/config.yaml;
 
-      apk add --no-cache yq;
-      yq eval '.db_config.password = strload(\"/run/secrets/db_password\") | .server_config.jwt_key = strload(\"/run/secrets/jwt_key\")' /app/config/config.yaml -i;
+        apk add --no-cache yq;
+        yq eval '.db_config.password = strload(\"/run/secrets/db_password\") | .server_config.jwt_key = strload(\"/run/secrets/jwt_key\")' /app/config/config.yaml -i;
       "
 
   app:
