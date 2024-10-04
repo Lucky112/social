@@ -13,6 +13,7 @@ type ProfilesService struct {
 // Хранилище зарегистрированных пользователей
 type ProfilesStorage interface {
 	GetAll(ctx context.Context) ([]*models.Profile, error)
+	Search(ctx context.Context, params *models.SearchParams) ([]*models.Profile, error)
 	Get(ctx context.Context, id string) (*models.Profile, error)
 	Add(ctx context.Context, profile *models.Profile) (string, error)
 }
@@ -25,6 +26,10 @@ func NewProfilesService(storage ProfilesStorage) ProfilesService {
 
 func (s ProfilesService) GetAll(ctx context.Context) ([]*models.Profile, error) {
 	return s.storage.GetAll(ctx)
+}
+
+func (s ProfilesService) Search(ctx context.Context, params *models.SearchParams) ([]*models.Profile, error) {
+	return s.storage.Search(ctx, params)
 }
 
 func (s ProfilesService) Get(ctx context.Context, id string) (*models.Profile, error) {

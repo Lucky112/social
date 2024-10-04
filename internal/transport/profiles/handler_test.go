@@ -24,7 +24,8 @@ func TestProfiles(t *testing.T) {
 	app.Use(jwt.Middleware(signingKey))
 	app.Post("/profiles", profilesHandler.CreateProfile)
 	app.Get("/profiles", profilesHandler.GetProfiles)
-	app.Get("/profiles/:id", profilesHandler.GetProfile)
+	app.Get("/profiles/search", profilesHandler.SearchProfile)
+	app.Get("/profiles/:id", profilesHandler.GetProfileById)
 
 	t.Run("test CreateProfile", func(t *testing.T) {
 		userId := "1"
@@ -227,4 +228,49 @@ func TestProfiles(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 	})
+
+	t.Run("test SearchProfiles", func(t *testing.T) {
+		userId := "1"
+
+		profiles := []*models.Profile{
+			{
+				Name:    "username",
+				Surname: "surname",
+			},
+		}
+
+		params := &models.SearchParams{
+			NamePrefix:    "username",
+			SurnamePrefix: "surname",
+		}
+
+		service.On("Search", mock.Anything, params).Return(profiles, nil).Once()
+
+		token, err := jwt.MakeToken(userId, signingKey)
+		assert.NoError(t, err)
+
+		req := httptest.NewRequest("GET", "/profiles/search?name=username&surname=surname", nil)
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+
+		resp, err := app.Test(req, -1)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+	})
+
+	t.Run("test SearchProfiles failed", func(t *testing.T) {
+		userId := "1"
+
+		service.On("Search", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("service error")).Once()
+
+		token, err := jwt.MakeToken(userId, signingKey)
+		assert.NoError(t, err)
+
+		req := httptest.NewRequest("GET", "/profiles/search?name=name&surname=surname", nil)
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+
+		resp, err := app.Test(req, -1)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+	})
+
 }
