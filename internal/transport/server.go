@@ -8,6 +8,7 @@ import (
 
 	"github.com/Lucky112/social/config"
 	"github.com/Lucky112/social/internal/transport/auth"
+	"github.com/Lucky112/social/internal/transport/friends"
 	"github.com/Lucky112/social/internal/transport/jwt"
 	"github.com/Lucky112/social/internal/transport/profiles"
 )
@@ -17,11 +18,17 @@ type Server struct {
 	port   uint16
 }
 
-func NewServer(cfg *config.ServerConfig, authService auth.AuthService, profilesService profiles.ProfilesService) Server {
+func NewServer(
+	cfg *config.ServerConfig,
+	authService auth.AuthService,
+	profilesService profiles.ProfilesService,
+	friendsService friends.FriendsService,
+) Server {
 	jwtKey := []byte(cfg.JWTKey)
 
 	authHandler := auth.NewAuthHandler(authService, jwtKey)
 	profilesHandler := profiles.NewProfilesHandler(profilesService)
+	friendsHandler := friends.NewFriendsHandler(friendsService, profilesService)
 
 	server := fiber.New()
 
@@ -38,6 +45,10 @@ func NewServer(cfg *config.ServerConfig, authService auth.AuthService, profilesS
 	authorizedGroup.Get("/profiles", profilesHandler.GetProfiles)
 	authorizedGroup.Get("/profiles/search", profilesHandler.SearchProfile)
 	authorizedGroup.Get("/profiles/:id", profilesHandler.GetProfileById)
+
+	authorizedGroup.Post("/friends/:friend_id", friendsHandler.AddFriend)
+	authorizedGroup.Delete("/friends/:friend_id", friendsHandler.DeleteFriend)
+	authorizedGroup.Get("/friends", friendsHandler.GetFriends)
 
 	return Server{
 		server: server,

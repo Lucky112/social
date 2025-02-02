@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Lucky112/social/config"
+	"github.com/Lucky112/social/internal/storage/inmemory"
 	pg "github.com/Lucky112/social/internal/storage/postgres"
 	"github.com/Lucky112/social/pkg/postgres"
 )
@@ -39,6 +40,11 @@ func (s Service) AuthService() AuthService {
 func (s Service) ProfilesService() ProfilesService {
 	storage := pg.NewProfilesProvider(s.dbpool)
 	return NewProfilesService(storage)
+}
+
+func (s Service) FriendsService() FriendsService {
+	storage := inmemory.NewFriendsStorage()
+	return NewFriendsService(storage)
 }
 
 func toPostgresConfig(cfg *config.DBConfig) *postgres.Config {

@@ -14,7 +14,12 @@ func Run(config *config.Config) {
 		panic(err)
 	}
 
-	server := transport.NewServer(config.ServerConfig, service.AuthService(), service.ProfilesService())
+	server := transport.NewServer(
+		config.ServerConfig,
+		service.AuthService(),
+		service.ProfilesService(),
+		service.FriendsService(),
+	)
 
 	err = server.Start()
 	if err != nil {
