@@ -99,7 +99,8 @@ func toNeo4jConfig(cfg *config.Neo4jConfig) *neo4j.Config {
 	return &neo4j.Config{
 		User:     cfg.User,
 		Password: cfg.Password,
-		URI:      cfg.URI,
+		Host:     cfg.Host,
+		Port:     cfg.Port,
 	}
 }
 

@@ -30,9 +30,10 @@ type DBConfig struct {
 }
 
 type Neo4jConfig struct {
+	Host     string `json:"host"     yaml:"host"     validate:"required,hostname|ip"`
+	Port     uint16 `json:"port"     yaml:"port"     validate:"required,min=1,max=65535"`
 	User     string `json:"user"     yaml:"user"     validate:"required"`
 	Password string `json:"password" yaml:"password" validate:"required"`
-	URI      string `json:"uri"      yaml:"uri"      validate:"required"`
 }
 
 type ServerConfig struct {

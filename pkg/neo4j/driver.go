@@ -12,7 +12,7 @@ type Driver struct {
 }
 
 func NewDriver(ctx context.Context, config *Config) (*Driver, error) {
-	driver, err := neo4j.NewDriverWithContext(config.URI, neo4j.BasicAuth(config.User, config.Password, ""))
+	driver, err := neo4j.NewDriverWithContext(config.connectionURL(), neo4j.BasicAuth(config.User, config.Password, ""))
 	if err != nil {
 		return nil, fmt.Errorf("creating Neo4j driver: %w", err)
 	}

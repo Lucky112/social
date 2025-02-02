@@ -7,7 +7,7 @@ import (
 )
 
 func NewStdDriver(config *Config) (neo4j.Driver, error) {
-	driver, err := neo4j.NewDriver(config.URI, neo4j.BasicAuth(config.User, config.Password, ""))
+	driver, err := neo4j.NewDriver(config.connectionURL(), neo4j.BasicAuth(config.User, config.Password, ""))
 	if err != nil {
 		return nil, fmt.Errorf("creating Neo4j driver: %w", err)
 	}
