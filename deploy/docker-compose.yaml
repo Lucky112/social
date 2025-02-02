@@ -15,6 +15,25 @@ services:
     networks:
       - app_network
 
+  neo4j:
+    image: neo4j:5.12-community
+    container_name: my_neo4j
+    environment:
+      NEO4J_AUTH: neo4j/dumb_password
+      NEO4J_server.memory.pagecache.size: 512M
+      NEO4J_server.memory.heap.initial_size: 512M
+      NEO4J_server.memory.heap.max_size: 1024M
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+      - neo4j_conf:/conf
+      - neo4j_plugins:/plugins
+    ports:
+      - "7474:7474"  # HTTP Neo4j Browser
+      - "7687:7687"  # Bolt Protocol
+    networks:
+      - app_network
+
   # data-generator:
   #   build:
   #     context: ./data_generator
@@ -45,7 +64,7 @@ services:
         cp /app/config/config.orig.yaml /app/config/config.yaml;
 
         apk add --no-cache yq;
-        yq eval '.db_config.password = strload(\"/run/secrets/db_password\") | .server_config.jwt_key = strload(\"/run/secrets/jwt_key\")' /app/config/config.yaml -i;
+        yq eval '.storage_config.db_config.password = strload(\"/run/secrets/db_password\") | .server_config.jwt_key = strload(\"/run/secrets/jwt_key\")' /app/config/config.yaml -i;
       "
 
   app:
@@ -57,6 +76,8 @@ services:
       config-generator:
         condition: "service_completed_successfully"
       postgres:
+        condition: "service_started"
+      neo4j:
         condition: "service_started"
     environment:
       CONFIG_PATH: /app/config/config.yaml
@@ -73,6 +94,10 @@ networks:
 volumes:
   pgdata:
   app-config:
+  neo4j_data:
+  neo4j_logs:
+  neo4j_conf:
+  neo4j_plugins:
 
 secrets:
   jwt_key:

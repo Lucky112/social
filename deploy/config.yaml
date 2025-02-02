@@ -1,9 +1,9 @@
 storage_config:
   neo4j_config:
     host: neo4j
-    port: "7687"
-    user: "admin"
-    password: "dumb password"
+    port: 7687
+    user: "neo4j"
+    password: "dumb_password"
   db_config:
     host: "postgres"
     port: 5432
