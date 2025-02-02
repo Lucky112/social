@@ -1,0 +1,2 @@
+DROP CONSTRAINT ON (u:User) ASSERT u.id IS UNIQUE;
+DROP INDEX FOR (u:User) ON (u.id);

@@ -10,10 +10,13 @@ require (
 	github.com/gofiber/contrib/jwt v1.0.10
 	github.com/gofiber/fiber/v2 v2.52.5
 	github.com/golang-jwt/jwt/v5 v5.2.1
+	github.com/golang-migrate/migrate v3.5.4+incompatible
 	github.com/golang-migrate/migrate/v4 v4.17.1
 	github.com/google/uuid v1.6.0
 	github.com/guregu/null/v5 v5.0.0
 	github.com/jackc/pgx/v5 v5.6.0
+	github.com/neo4j/neo4j-go-driver v1.8.1-0.20200803113522-b626aa943eba
+	github.com/neo4j/neo4j-go-driver/v5 v5.27.0
 	github.com/ory/dockertest/v3 v3.10.0
 	github.com/pashagolub/pgxmock/v4 v4.2.0
 	github.com/stretchr/testify v1.9.0
@@ -57,7 +60,6 @@ require (
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/moby/term v0.5.0 // indirect
-	github.com/neo4j/neo4j-go-driver/v5 v5.27.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0 // indirect
 	github.com/opencontainers/runc v1.1.5 // indirect

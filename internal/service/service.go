@@ -57,6 +57,11 @@ func connectToPostgres(ctx context.Context, config *config.DBConfig) (*postgres.
 func connectToNeo4j(ctx context.Context, config *config.Neo4jConfig) (*neo4j.Driver, error) {
 	cfg := toNeo4jConfig(config)
 
+	err := migrateNeo4j(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("migrating database: %v", err)
+	}
+
 	driver, err := neo4j.NewDriver(ctx, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("creating neo4j driver: %v", err)
@@ -112,6 +117,25 @@ func migrateDB(cfg *postgres.Config) error {
 	err = sqldb.Close()
 	if err != nil {
 		return fmt.Errorf("closing db after migration: %v", err)
+	}
+
+	return nil
+}
+
+func migrateNeo4j(cfg *neo4j.Config) error {
+	driver, err := neo4j.NewStdDriver(cfg)
+	if err != nil {
+		return fmt.Errorf("opening neo4j: %v", err)
+	}
+
+	err = n4j.ApplyMigrations(driver)
+	if err != nil {
+		return fmt.Errorf("applying neo4j migrations: %v", err)
+	}
+
+	err = driver.Close()
+	if err != nil {
+		return fmt.Errorf("closing neo4j after migration: %v", err)
 	}
 
 	return nil
