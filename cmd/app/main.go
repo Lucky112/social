@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log"
 
@@ -21,5 +22,5 @@ func main() {
 		log.Fatalf("Error loading config: %v", err)
 	}
 
-	app.Run(config)
+	app.Run(context.Background(), config)
 }
