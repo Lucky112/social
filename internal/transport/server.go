@@ -10,6 +10,7 @@ import (
 	"github.com/Lucky112/social/internal/transport/auth"
 	"github.com/Lucky112/social/internal/transport/friends"
 	"github.com/Lucky112/social/internal/transport/jwt"
+	"github.com/Lucky112/social/internal/transport/posts"
 	"github.com/Lucky112/social/internal/transport/profiles"
 )
 
@@ -23,12 +24,14 @@ func NewServer(
 	authService auth.AuthService,
 	profilesService profiles.ProfilesService,
 	friendsService friends.FriendsService,
+	postsService posts.PostsService,
 ) Server {
 	jwtKey := []byte(cfg.JWTKey)
 
 	authHandler := auth.NewAuthHandler(authService, jwtKey)
 	profilesHandler := profiles.NewProfilesHandler(profilesService)
 	friendsHandler := friends.NewFriendsHandler(friendsService, profilesService)
+	postsHandler := posts.NewPostsHandler(postsService)
 
 	server := fiber.New()
 
@@ -49,6 +52,10 @@ func NewServer(
 	authorizedGroup.Post("/friends/:friend_id", friendsHandler.AddFriend)
 	authorizedGroup.Delete("/friends/:friend_id", friendsHandler.DeleteFriend)
 	authorizedGroup.Get("/friends", friendsHandler.GetFriends)
+
+	authorizedGroup.Post("/posts", postsHandler.CreatePost)
+	authorizedGroup.Get("/posts/:user_id", postsHandler.GetPosts)
+	authorizedGroup.Get("/posts/:user_id/:post_id", postsHandler.GetPostById)
 
 	return Server{
 		server: server,

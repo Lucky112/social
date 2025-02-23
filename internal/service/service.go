@@ -81,6 +81,11 @@ func (s Service) ProfilesService() ProfilesService {
 	return NewProfilesService(storage)
 }
 
+func (s Service) PostsService() PostsService {
+	storage := pg.NewPostsProvider(s.dbpool)
+	return NewPostsService(storage)
+}
+
 func (s Service) FriendsService() FriendsService {
 	// storage := n4j.NewFriendsProvider(s.neo4jDriver)
 	storage := inmemory.NewFriendsStorage()

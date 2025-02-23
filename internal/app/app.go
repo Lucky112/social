@@ -20,6 +20,7 @@ func Run(ctx context.Context, config *config.Config) {
 		service.AuthService(),
 		service.ProfilesService(),
 		service.FriendsService(),
+		service.PostsService(),
 	)
 
 	err = server.Start()

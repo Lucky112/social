@@ -24,7 +24,7 @@ func (p ProfilesProvider) GetAll(ctx context.Context) ([]*models.Profile, error)
 
 	profilesInfo, err := p.getAllProfileInfo(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("getting all profiles info: %v", err)
+		return nil, fmt.Errorf("getting all profiles info: %w", err)
 	}
 
 	for _, profileInfo := range profilesInfo {
@@ -44,7 +44,7 @@ func (p ProfilesProvider) Search(ctx context.Context, params *models.SearchParam
 
 	profilesInfo, err := p.getProfilesInfoByParams(ctx, params)
 	if err != nil {
-		return nil, fmt.Errorf("getting all profiles info: %v", err)
+		return nil, fmt.Errorf("getting all profiles info: %w", err)
 	}
 
 	for _, profileInfo := range profilesInfo {
@@ -67,7 +67,7 @@ func (p ProfilesProvider) Get(ctx context.Context, profileID string) (*models.Pr
 
 	profileInfo, err := p.getProfileInfo(ctx, id)
 	if err != nil {
-		return nil, fmt.Errorf("getting profile info of '%d': %v", id, err)
+		return nil, fmt.Errorf("getting profile info of '%d': %w", id, err)
 	}
 
 	profile, err := profileInfo.toModel()
@@ -138,7 +138,7 @@ func (p ProfilesProvider) getProfileInfo(ctx context.Context, profileID int64) (
 	}
 
 	if len(profiles) == 0 {
-		return nil, fmt.Errorf("querying db: %v", models.ProfileNotFound)
+		return nil, fmt.Errorf("querying db: %w", models.ProfileNotFound)
 	}
 
 	return &profiles[0], nil
@@ -198,7 +198,7 @@ func (p ProfilesProvider) getProfilesInfoByParams(ctx context.Context, params *m
 	}
 
 	if len(profiles) == 0 {
-		return nil, fmt.Errorf("querying db: %v", models.ProfileNotFound)
+		return nil, fmt.Errorf("querying db: %w", models.ProfileNotFound)
 	}
 
 	return profiles, nil
