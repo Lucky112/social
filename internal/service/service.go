@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Lucky112/social/config"
+	"github.com/Lucky112/social/internal/storage/inmemory"
 	n4j "github.com/Lucky112/social/internal/storage/neo4j"
 	pg "github.com/Lucky112/social/internal/storage/postgres"
 	"github.com/Lucky112/social/pkg/neo4j"
@@ -57,10 +58,10 @@ func connectToPostgres(ctx context.Context, config *config.DBConfig) (*postgres.
 func connectToNeo4j(ctx context.Context, config *config.Neo4jConfig) (*neo4j.Driver, error) {
 	cfg := toNeo4jConfig(config)
 
-	err := migrateNeo4j(cfg)
-	if err != nil {
-		return nil, fmt.Errorf("migrating database: %v", err)
-	}
+	// err := migrateNeo4j(cfg)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("migrating database: %v", err)
+	// }
 
 	driver, err := neo4j.NewDriver(ctx, cfg)
 	if err != nil {
@@ -81,7 +82,8 @@ func (s Service) ProfilesService() ProfilesService {
 }
 
 func (s Service) FriendsService() FriendsService {
-	storage := n4j.NewFriendsProvider(s.neo4jDriver)
+	// storage := n4j.NewFriendsProvider(s.neo4jDriver)
+	storage := inmemory.NewFriendsStorage()
 	return NewFriendsService(storage)
 }
 

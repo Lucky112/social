@@ -17,10 +17,10 @@ func NewDriver(ctx context.Context, config *Config) (*Driver, error) {
 		return nil, fmt.Errorf("creating Neo4j driver: %w", err)
 	}
 
-	err = driver.VerifyConnectivity(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("connecting to Neo4j: %w", err)
-	}
+	// err = driver.VerifyConnectivity(ctx)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("connecting to Neo4j: %w", err)
+	// }
 
 	return &Driver{driver: driver}, nil
 }
