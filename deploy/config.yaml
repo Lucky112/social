@@ -1,9 +1,15 @@
-db_config:
-  host: "postgres"
-  port: 5432
-  user: "admin"
-  password: "dumb password"
-  database: "demoDB"
+storage_config:
+  neo4j_config:
+    host: neo4j
+    port: 7687
+    user: "neo4j"
+    password: "dumb_password"
+  db_config:
+    host: "postgres"
+    port: 5432
+    user: "admin"
+    password: "dumb password"
+    database: "demoDB"
 
 server_config:
   port: 15000

@@ -1,0 +1,2 @@
+CREATE CONSTRAINT ON (u:User) ASSERT u.id IS UNIQUE;
+CREATE INDEX FOR (u:User) ON (u.id);

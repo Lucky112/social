@@ -12,8 +12,13 @@ import (
 )
 
 type Config struct {
-	DBConfig     *DBConfig     `json:"db_config"     yaml:"db_config"     validate:"required"`
-	ServerConfig *ServerConfig `json:"server_config" yaml:"server_config" validate:"required"`
+	StorageConfig *StorageConfig `json:"storage_config"     yaml:"storage_config"     validate:"required"`
+	ServerConfig  *ServerConfig  `json:"server_config"      yaml:"server_config"      validate:"required"`
+}
+
+type StorageConfig struct {
+	DBConfig    *DBConfig    `json:"db_config"        yaml:"db_config"        validate:"required"`
+	Neo4jConfig *Neo4jConfig `json:"neo4j_config"     yaml:"neo4j_config"     validate:"required"`
 }
 
 type DBConfig struct {
@@ -24,8 +29,15 @@ type DBConfig struct {
 	Database string `json:"database" yaml:"database" validate:"required"`
 }
 
+type Neo4jConfig struct {
+	Host     string `json:"host"     yaml:"host"     validate:"required,hostname|ip"`
+	Port     uint16 `json:"port"     yaml:"port"     validate:"required,min=1,max=65535"`
+	User     string `json:"user"     yaml:"user"     validate:"required"`
+	Password string `json:"password" yaml:"password" validate:"required"`
+}
+
 type ServerConfig struct {
-	Port   uint16 `json:"port" yaml:"port" validate:"required,min=1,max=65535"`
+	Port   uint16 `json:"port"    yaml:"port"    validate:"required,min=1,max=65535"`
 	JWTKey string `json:"jwt_key" yaml:"jwt_key" validate:"required"`
 }
 
